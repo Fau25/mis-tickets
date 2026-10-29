@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Mis Tickets</title>
 <meta name="theme-color" content="#ECECE9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
@@ -54,11 +54,11 @@ header.cab{padding:calc(14px + env(safe-area-inset-top)) 0 4px}
 
 .buscar{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:16px;padding:0 16px;height:48px;margin-top:16px;color:#8C8C86}
 .buscar svg.i{width:18px;height:18px}
-.buscar input{border:0;outline:0;background:transparent;flex:1;height:100%;color:var(--txt);font-size:15px}
+.buscar input{border:0;outline:0;background:transparent;flex:1;height:100%;color:var(--txt);font-size:16px;min-width:0}
 .buscar input::placeholder{color:#8C8C86}
 
 .filtros{display:grid;grid-template-columns:repeat(4,1fr);background:var(--track);border-radius:14px;padding:4px;margin-top:12px}
-.filtros button{border:0;background:transparent;border-radius:10px;padding:9px 0;font-size:13px;font-weight:600;color:var(--sec)}
+.filtros button{border:0;background:transparent;border-radius:10px;padding:9px 0;min-height:40px;font-size:13px;font-weight:600;color:var(--sec)}
 .filtros button.on{background:var(--card);color:var(--ink)}
 
 .aviso{display:flex;align-items:center;gap:10px;background:var(--inv);color:var(--inv-txt);border-radius:16px;padding:13px 16px;margin-top:16px;font-weight:700;font-size:14.5px}
@@ -194,15 +194,15 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
 .campo:last-child{border-bottom:0}
 .campo > span{display:block;color:var(--sec);font-size:12px;font-weight:600;margin-bottom:4px}
 .campo input,.campo textarea{width:100%;border:0;outline:0;background:transparent;font-size:17px;font-weight:700;padding:2px 0;color:var(--txt)}
-.campo textarea{resize:vertical;min-height:44px;font-weight:600;font-size:15px}
+.campo textarea{resize:vertical;min-height:44px;font-weight:600;font-size:16px}
 .campo input::placeholder,.campo textarea::placeholder{color:var(--sec);opacity:.55;font-weight:600}
-#e-num,#e-ident,#e-barras{font-family:var(--mono);font-size:15px;font-weight:500}
+#e-num,#e-ident,#e-barras{font-family:var(--mono);font-size:16px;font-weight:500}
 .dos{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
 .opciones{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px;background:var(--track);border-radius:14px;padding:4px}
-.opciones button{border:0;background:transparent;border-radius:10px;padding:9px 2px;font-weight:600;font-size:13.5px;color:var(--sec)}
+.opciones button{border:0;background:transparent;border-radius:10px;padding:9px 2px;min-height:42px;font-weight:600;font-size:13.5px;color:var(--sec)}
 .opciones button.on{background:var(--card);color:var(--ink);font-weight:700}
 .hasta{color:var(--sec);font-size:13px;margin-top:8px;min-height:18px}
-.hasta input{border:0;background:var(--soft);border-radius:10px;padding:5px 9px;font-weight:700;color:var(--txt)}
+.hasta input{border:0;background:var(--soft);border-radius:10px;padding:6px 10px;font-weight:700;color:var(--txt);font-size:16px;min-height:38px}
 .nota-form{color:var(--sec);font-size:13px;padding:10px 6px 0;line-height:1.5}
 
 .elegir{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
@@ -222,7 +222,7 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
 .ft{position:relative;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:var(--card);display:grid;place-items:center;color:var(--sec);border:0;padding:0}
 .ft img{width:100%;height:100%;object-fit:cover;display:block}
 .ft .pdf{display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:700;font-family:var(--mono);font-size:12px}
-.ft .x{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(30,30,28,.7);color:#fff;display:grid;place-items:center;border:0}
+.ft .x{position:absolute;top:4px;right:4px;width:36px;height:36px;border-radius:50%;background:rgba(30,30,28,.7);color:#fff;display:grid;place-items:center;border:0}
 .ft .x svg.i{width:16px;height:16px;stroke-width:2.2}
 .ft .modo{position:absolute;left:5px;right:5px;bottom:5px;font-size:11px;font-weight:700;background:rgba(30,30,28,.75);color:#fff;border-radius:999px;padding:5px 4px;border:0;line-height:1.15}
 .ft.add{background:transparent;border:1.5px dashed #B9B9B3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:13px;color:var(--ink);cursor:pointer}
@@ -255,6 +255,24 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
 .carnet .icono-c{position:absolute;right:18px;top:18px;width:46px;height:46px;border-radius:14px;background:var(--inv);color:var(--inv-txt);display:grid;place-items:center}
 .ajustes p{color:var(--sec);font-size:14px;line-height:1.55;margin:10px 6px}
 .estado-sync{display:flex;gap:10px;align-items:center;font-weight:600;padding:14px 0}
+/* Usabilidad táctil */
+html{overflow-x:hidden;overscroll-behavior-y:none}
+body{overscroll-behavior-y:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,pre,.tarjeta-osc b,.dato .v,.lista-p,.ticket .importe{-webkit-user-select:text;user-select:text}
+input,textarea{-webkit-touch-callout:default}
+button,label,a,.ticket,.ft{touch-action:manipulation}
+button{-webkit-user-select:none;user-select:none}
+button:not(.ticket):not(:disabled):active,label.ft:active,.elegir label:active{opacity:.7}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:10px}
+.capa{overscroll-behavior:contain}
+.capa.arrastrando{transition:none!important;animation:none}
+.capa.soltando{transition:transform .22s ease}
+header.cab{position:sticky;z-index:5;background:var(--bg);padding-bottom:10px}
+body.teclado nav.barra{display:none}
+body.teclado{padding-bottom:24px}
+.envoltura{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (min-width:760px){.lista{display:grid;grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -290,7 +308,7 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
     <div class="tit"><span class="hoy"><span id="hoy"></span><button class="punto" id="punto" aria-label="Estado de sincronización"></button></span><h1>Mis Tickets</h1></div>
     <button class="boton-icono der" id="b-ajustes-cab" aria-label="Ajustes"><svg class="i"><use href="#i-ajustes"/></svg></button>
   </div>
-  <label class="buscar"><svg class="i"><use href="#i-lupa"/></svg><input id="buscar" type="search" placeholder="Buscar producto o tienda" autocomplete="off"></label>
+  <label class="buscar"><svg class="i"><use href="#i-lupa"/></svg><input id="buscar" type="search" placeholder="Buscar producto o tienda" autocomplete="off" enterkeyhint="search" autocorrect="off"></label>
   <div class="filtros" id="filtros">
     <button data-f="todos" class="on">Todos</button><button data-f="dev">Devolución</button><button data-f="gar">Garantía</button><button data-f="papelera">Papelera</button>
   </div>
@@ -312,7 +330,7 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
 <script src="extras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v7';
+const VERSION = 'v8';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -681,15 +699,15 @@ function editar(id, archivos) {
       <input type="file" id="e-file" accept="image/*,application/pdf" multiple class="oculto">
       <div id="e-estado"></div>
       <div class="bloque">
-        <label class="campo"><span>Qué compraste</span><input id="e-concepto" placeholder="Ej. Auriculares Sony" autocomplete="off"></label>
-        <label class="campo"><span>Tienda</span><input id="e-tienda" autocomplete="off"></label>
+        <label class="campo"><span>Qué compraste</span><input id="e-concepto" placeholder="Ej. Auriculares Sony" autocomplete="off" autocapitalize="sentences" enterkeyhint="next"></label>
+        <label class="campo"><span>Tienda</span><input id="e-tienda" autocomplete="off" autocapitalize="words" enterkeyhint="next"></label>
         <div class="dos">
           <label class="campo"><span>Fecha de compra</span><input id="e-fecha" type="date"></label>
-          <label class="campo"><span>Importe (€)</span><input id="e-total" inputmode="decimal" placeholder="0,00"></label>
+          <label class="campo"><span>Importe (€)</span><input id="e-total" inputmode="decimal" placeholder="0,00" enterkeyhint="next"></label>
         </div>
-        <label class="campo"><span>Nº de ticket o factura</span><input id="e-num" autocomplete="off"></label>
-        <label class="campo"><span>Identificador (cliente o compra)</span><input id="e-ident" inputmode="numeric" autocomplete="off" placeholder="Opcional"></label>
-        <label class="campo"><span>Nº del código de barras</span><input id="e-barras" inputmode="numeric" autocomplete="off" placeholder="Opcional"></label>
+        <label class="campo"><span>Nº de ticket o factura</span><input id="e-num" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next"></label>
+        <label class="campo"><span>Identificador (cliente o compra)</span><input id="e-ident" inputmode="numeric" autocomplete="off" placeholder="Opcional" enterkeyhint="next"></label>
+        <label class="campo"><span>Nº del código de barras</span><input id="e-barras" inputmode="numeric" autocomplete="off" placeholder="Opcional" enterkeyhint="done"></label>
       </div>
       <h2 class="sec">Plazos</h2>
       <div class="bloque">
@@ -999,7 +1017,7 @@ function abrirReclamar(t, blobs) {
       <div class="opciones" id="r-tipo" style="margin-top:4px"><button data-v="dev" style="grid-column:span 2">Devolución</button><button data-v="gar" style="grid-column:span 2">Garantía</button></div>
       <p class="nota-form" id="r-estado"></p>
       <div class="bloque"><label class="campo"><span>Qué le pasa (opcional)</span><textarea id="r-problema" rows="2" placeholder="Ej. La batería no carga desde la primera semana"></textarea></label></div>
-      <div class="bloque"><label class="campo"><span>Mensaje para la tienda</span><textarea id="r-texto" rows="12" style="font-weight:500;font-size:15px;line-height:1.5"></textarea></label></div>
+      <div class="bloque"><label class="campo"><span>Mensaje para la tienda</span><textarea id="r-texto" rows="12" style="font-weight:500;font-size:16px;line-height:1.5"></textarea></label></div>
       <button class="btn ancho pri" data-x="enviar">${ico('compartir')}Enviar con ${(t.fotos || []).length ? 'el ticket adjunto' : 'el texto'}</button>
       <button class="btn ancho" data-x="copiar">${ico('copiar')}Copiar el texto</button>
       <p class="nota-form">Si la tienda no responde o no te da solución, puedes pedir la hoja de reclamaciones en la tienda o reclamar en la oficina de consumo (OMIC) de tu ayuntamiento o de tu comunidad autónoma.</p>
@@ -1270,6 +1288,45 @@ async function prepararCopia(boton, info) {
   } catch (e) { info.textContent = 'No se pudo preparar la copia: ' + (e.message || e); }
   boton.disabled = false;
 }
+
+/* ---------- Usabilidad: teclado, cabecera fija y gesto para volver ---------- */
+const esCampo = el => el && ((el.tagName === 'INPUT' && !/^(checkbox|file|radio|button)$/.test(el.type)) || el.tagName === 'TEXTAREA');
+document.addEventListener('focusin', e => { if (esCampo(e.target)) document.body.classList.add('teclado'); });
+document.addEventListener('focusout', () => setTimeout(() => { if (!esCampo(document.activeElement)) document.body.classList.remove('teclado'); }, 80));
+// Intro: buscar cierra el teclado; en formularios pasa al siguiente campo
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !esCampo(e.target) || e.target.tagName === 'TEXTAREA') return;
+  e.preventDefault();
+  const capa = e.target.closest('.capa'), campos = capa ? [...capa.querySelectorAll('input:not([type=checkbox]):not([type=file]):not([type=date]),textarea')] : [];
+  const sig = campos[campos.indexOf(e.target) + 1];
+  if (e.target.id !== 'buscar' && sig && e.target.getAttribute('enterkeyhint') === 'next') sig.focus(); else e.target.blur();
+});
+// Al deslizar la lista con el buscador abierto, se cierra el teclado
+window.addEventListener('touchmove', () => { if (document.activeElement && document.activeElement.id === 'buscar' && !capas.length) document.activeElement.blur(); }, { passive: true });
+// Cabecera: el título se va con el scroll, buscador y filtros se quedan arriba
+function ajustarCabecera() { const b = $('.cab .buscar'); if (b) $('header.cab').style.top = -(b.offsetTop - 10) + 'px'; }
+window.addEventListener('resize', ajustarCabecera); ajustarCabecera();
+// Deslizar desde el borde izquierdo para volver (como en las apps del iPhone)
+(() => {
+  let x0 = 0, y0 = 0, capa = null, dx = 0;
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0]; capa = capas[capas.length - 1] || null; dx = 0;
+    if (!capa || t.clientX > 24 || $('.visor')) { capa = null; return; }
+    x0 = t.clientX; y0 = t.clientY; capa.classList.remove('soltando');
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!capa) return;
+    const t = e.touches[0]; dx = t.clientX - x0;
+    if (Math.abs(t.clientY - y0) > 40 && dx < 30) { capa.style.transform = ''; capa = null; return; }
+    if (dx > 0) { capa.classList.add('arrastrando'); capa.style.transform = `translateX(${dx}px)`; }
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (!capa) return;
+    const c = capa; capa = null; c.classList.remove('arrastrando'); c.classList.add('soltando');
+    if (dx > 90) { const b = c.querySelector('.top [data-x=cerrar]'); c.style.transform = ''; if (b) b.click(); }
+    else c.style.transform = '';
+  });
+})();
 
 /* ---------- Arranque ---------- */
 cargarTickets().then(() => { purgarLocal(); pintarInicio(); punto(); sincronizar(); });
