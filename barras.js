@@ -28,7 +28,7 @@
     const m = modulos(txt); if (!m) return '';
     let rects = '', x = 0;
     while (x < m.length) { if (m[x] === '1') { let w = 1; while (m[x + w] === '1') w++; rects += `<rect x="${x + 10}" width="${w}" height="${alto || 60}"/>`; x += w; } else x++; }
-    return `<svg viewBox="0 0 ${m.length + 20} ${alto || 60}" preserveAspectRatio="none" role="img" aria-label="Código de barras ${txt}" style="width:100%;height:${alto || 60}px;display:block" fill="${color || '#000'}">${rects}</svg>`;
+    return `<svg viewBox="0 0 ${m.length + 20} ${alto || 60}" preserveAspectRatio="none" role="img" aria-label="Código de barras ${String(txt).replace(/[^\w\- \/.]/g, '')}" style="width:100%;height:${alto || 60}px;display:block" fill="${color || '#000'}">${rects}</svg>`;
   }
   g.codigoBarras = { modulos, svg };
   if (typeof module !== 'undefined') module.exports = { modulos, svg };

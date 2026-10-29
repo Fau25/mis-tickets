@@ -164,7 +164,8 @@ nav.barra .tab.on{color:var(--ink);font-weight:700}
 .foto-grande .lupa{position:absolute;right:10px;bottom:10px;background:rgba(30,30,28,.72);color:#fff;border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;display:flex;gap:5px;align-items:center;border:0}
 
 .acciones{display:flex;gap:10px;margin-top:18px}
-.acciones .btn{flex:1}
+.acciones .btn{flex:1;min-width:0;padding:0 12px}
+@media (max-width:360px){.acciones .btn svg.i{display:none}}
 .btn.redondo{flex:none!important;width:54px;height:54px;padding:0;border-radius:50%}
 
 .bloque{background:var(--card);border-radius:var(--r);padding:4px 18px;margin-top:12px}
@@ -273,6 +274,7 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
   <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.2"/></symbol>
   <symbol id="i-ampliar" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
   <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-descargar" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></symbol>
   <symbol id="i-adelante" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.5L4 8.5M4 13a8 8 0 0 0 14.3 4.5L20 15.5"/><path d="M4 4v4.5h4.5M20 20v-4.5h-4.5"/></symbol>
 </svg>
@@ -303,7 +305,7 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
 <script src="barras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v5';
+const VERSION = 'v6';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -327,34 +329,47 @@ const quedan = n => n === 0 ? 'hoy es el último día' : n === 1 ? 'queda 1 día
 
 /* ---------- Almacenamiento ---------- */
 let tickets = [];
-try { tickets = JSON.parse(localStorage.getItem('mt-tickets') || '[]'); } catch (e) { tickets = []; }
 let pendientes = new Set();
 try { pendientes = new Set(JSON.parse(localStorage.getItem('mt-pend') || '[]')); } catch (e) {}
 const cfg = { url: '', clave: '' };
 try { cfg.url = localStorage.getItem('mt-url') || ''; cfg.clave = localStorage.getItem('mt-clave') || ''; } catch (e) {}
 
+// Los tickets van en IndexedDB (sin el límite de ~5 MB de localStorage); lo pendiente, en localStorage
+let sinIdb = false;
 function guardarLocal() {
-  try {
-    localStorage.setItem('mt-tickets', JSON.stringify(tickets));
-    localStorage.setItem('mt-pend', JSON.stringify([...pendientes]));
-  } catch (e) { aviso('El almacenamiento del iPhone está lleno: libera espacio para guardar más tickets'); }
+  try { localStorage.setItem('mt-pend', JSON.stringify([...pendientes])); } catch (e) {}
+  const plano = () => { try { localStorage.setItem('mt-tickets', JSON.stringify(tickets)); } catch (e) { aviso('El almacenamiento del iPhone está lleno: libera espacio para guardar más tickets'); } };
+  if (sinIdb) return plano();
+  idb.dset('tickets', tickets).catch(e => { if (e && e.name === 'QuotaExceededError') aviso('El almacenamiento del iPhone está lleno: libera espacio para guardar más tickets'); else { sinIdb = true; plano(); } });
+}
+async function cargarTickets() {
+  let lista = null;
+  try { lista = await idb.dget('tickets'); } catch (e) { sinIdb = true; }
+  if (!Array.isArray(lista)) {
+    try { lista = JSON.parse(localStorage.getItem('mt-tickets') || '[]'); } catch (e) { lista = []; }
+    if (!sinIdb && lista.length) { try { await idb.dset('tickets', lista); localStorage.removeItem('mt-tickets'); } catch (e) { sinIdb = true; } }
+  }
+  tickets = lista.map(migrar);
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 }
 
 const idb = (() => {
   let db;
   const abrir = () => db ? Promise.resolve(db) : new Promise((ok, ko) => {
-    const r = indexedDB.open('mis-tickets', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('img');
-    r.onsuccess = () => { db = r.result; ok(db); }; r.onerror = () => ko(r.error);
+    const r = indexedDB.open('mis-tickets', 2);
+    r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('img')) d.createObjectStore('img'); if (!d.objectStoreNames.contains('datos')) d.createObjectStore('datos'); };
+    r.onsuccess = () => { db = r.result; db.onversionchange = () => { db.close(); db = null; }; ok(db); }; r.onerror = () => ko(r.error);
   });
-  const op = (modo, f) => abrir().then(d => new Promise((ok, ko) => {
-    const tx = d.transaction('img', modo), st = tx.objectStore('img'), r = f(st);
-    tx.oncomplete = () => ok(r && r.result); tx.onerror = () => ko(tx.error);
+  const op = (almacen, modo, f) => abrir().then(d => new Promise((ok, ko) => {
+    const tx = d.transaction(almacen, modo), st = tx.objectStore(almacen), r = f(st);
+    tx.oncomplete = () => ok(r && r.result); tx.onerror = () => ko(tx.error); tx.onabort = () => ko(tx.error);
   }));
   return {
-    get: k => op('readonly', s => s.get(k)).catch(() => null),
-    set: (k, v) => op('readwrite', s => s.put(v, k)),
-    del: k => op('readwrite', s => s.delete(k)).catch(() => {})
+    get: k => op('img', 'readonly', s => s.get(k)).catch(() => null),
+    set: (k, v) => op('img', 'readwrite', s => s.put(v, k)),
+    del: k => op('img', 'readwrite', s => s.delete(k)).catch(() => {}),
+    dget: k => op('datos', 'readonly', s => s.get(k)),
+    dset: (k, v) => op('datos', 'readwrite', s => s.put(v, k))
   };
 })();
 
@@ -364,7 +379,6 @@ function migrar(t) {
   t.fotos = (t.fotoId || t.mini || t.tipo) ? [{ k: '0', fotoId: t.fotoId || null, mime: t.tipo === 'pdf' ? 'application/pdf' : 'image/jpeg', mini: t.mini || '' }] : [];
   delete t.fotoId; delete t.tipo; return t;
 }
-tickets.forEach(migrar);
 const claveImg = (t, f) => 'img:' + t.id + ':' + f.k;
 async function fotoLocal(t, f) { return (await idb.get(claveImg(t, f))) || (f.k === '0' ? await idb.get('img:' + t.id) : null); }
 function borrarLocales(t) { (t.fotos || []).forEach(f => idb.del(claveImg(t, f))); idb.del('img:' + t.id); }
@@ -437,7 +451,8 @@ function purgarLocal() {
     const f = finDe(t);
     if (f && sumarDias(f, DIAS_PAPELERA) < h) { borrarLocales(t); cambio = true; t.borrado = true; return !!cfg.url; }
     return true;
-  }).map(t => t.borrado ? { id: t.id, t: t.t, borrado: true } : t);
+  }).map(t => t.borrado ? { id: t.id, t: t.t, borrado: true } : t)
+    .filter(t => !(t.borrado && !pendientes.has(t.id) && Date.now() - (t.t || 0) > 120 * 86400000 && (cambio = true)));
   if (cambio) guardarLocal();
 }
 
@@ -540,7 +555,7 @@ function lienzo(img, max, sx = 0, sy = 0, sw = img.naturalWidth || img.width, sh
   return c;
 }
 const aBlob = (c, q = .82) => new Promise(ok => c.toBlob(ok, 'image/jpeg', q));
-const aMini = c => lienzo(c, 240).toDataURL('image/jpeg', .62);
+const aMini = c => lienzo(c, 200).toDataURL('image/jpeg', .6);
 
 // Modo escáner: busca el papel, recorta a su borde y deja el fondo blanco y el texto oscuro.
 // Devuelve null si la foto no parece un ticket (p. ej. la foto de un producto).
@@ -854,29 +869,29 @@ function titulo(t) {
 }
 const subtitulo = t => titulo(t) !== (t.tienda || 'Sin tienda') ? (t.tienda || '') : '';
 
-function compartirFotos(t, blobs, boton) {
+// Fotos del ticket en memoria (el menú de compartir del iPhone tiene que abrirse justo al tocar)
+function precargar(t, blobs) {
+  return Promise.all((t.fotos || []).map(f => blobs[f.k] ? null : obtenerFoto(t, f).then(r => { if (r) blobs[f.k] = r; }).catch(() => {})));
+}
+function accionFotos(t, blobs, modo, cont) {
   const fotos = t.fotos || [];
   if (!fotos.length) return aviso('Este ticket no tiene fotos');
-  if (boton) boton.disabled = true;
-  (async () => {
-    try {
-      const base = ((t.tienda || 'ticket') + ' ' + (t.fecha || '')).trim().replace(/[^\w\- áéíóúñ]/gi, '');
-      const files = [];
-      for (const [i, g] of fotos.entries()) {
-        const r = (blobs && blobs[g.k]) || await obtenerFoto(t, g).catch(() => null); if (!r) continue;
-        files.push(new File([r.blob], base + (fotos.length > 1 ? ' (' + (i + 1) + ')' : '') + (esPdf(r) ? '.pdf' : '.jpg'), { type: r.mime }));
-      }
-      if (!files.length) return aviso('Las fotos aún no están disponibles');
-      const txt = [titulo(t), t.tienda, t.fecha && 'Compra: ' + fCorta(t.fecha), t.total != null && 'Importe: ' + eur(t.total), t.num && 'Nº ticket: ' + t.num, t.ident && 'Identificador: ' + t.ident].filter(Boolean).join('\n');
-      if (navigator.canShare && navigator.canShare({ files })) await navigator.share({ files, text: txt });
-      else files.forEach(fl => { const l = document.createElement('a'); l.href = URL.createObjectURL(fl); l.download = fl.name; l.click(); });
-    } catch (err) {} finally { if (boton) boton.disabled = false; }
-  })();
+  if (fotos.some(f => !blobs[f.k])) { aviso('Preparando las fotos… vuelve a pulsar en un momento'); precargar(t, blobs); return; }
+  const base = (titulo(t) + ' ' + (t.fecha || '')).trim().replace(/[^\w\- áéíóúñü]/gi, '').slice(0, 60);
+  const files = fotos.map((f, i) => { const r = blobs[f.k]; return new File([r.blob], base + (fotos.length > 1 ? ' (' + (i + 1) + ')' : '') + (esPdf(r) ? '.pdf' : '.jpg'), { type: r.mime }); });
+  const txt = [titulo(t), t.tienda, t.fecha && 'Compra: ' + fCorta(t.fecha), t.total != null && 'Importe: ' + eur(t.total), t.num && 'Nº ticket: ' + t.num, t.ident && 'Identificador: ' + t.ident].filter(Boolean).join('\n');
+  if (modo === 'guardar' && cont) {
+    let vista = false; try { vista = localStorage.getItem('mt-pista-guardar') === '1'; localStorage.setItem('mt-pista-guardar', '1'); } catch (e) {}
+    if (!vista && !cont.querySelector('.pista-g')) cont.insertAdjacentHTML('beforeend', `<p class="nota-form pista-g" style="text-align:center">En el menú que se abre, elige «Guardar imagen» para llevarla a Fotos${fotos.some(f => esPdf(blobs[f.k])) ? ', o «Guardar en Archivos» si es un PDF' : ''}.</p>`);
+  }
+  if (navigator.canShare && navigator.canShare({ files })) navigator.share(modo === 'enviar' ? { files, text: txt } : { files }).catch(() => {});
+  else files.forEach(fl => { const l = document.createElement('a'); l.href = URL.createObjectURL(fl); l.download = fl.name; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(l.href), 4000); });
 }
 
 function abrirFicha(id) {
   const t = tickets.find(x => x.id === id); if (!t || t.borrado) return;
-  const e = estado(t), fotos = t.fotos || [];
+  const e = estado(t), fotos = t.fotos || [], blobs = {};
+  precargar(t, blobs);
   const dia = s => { const d = aFecha(s); return d.getDate() + ' ' + MES[d.getMonth()]; };
   const ruta = (tipo, hasta, abierta, dias) => {
     const tot = Math.max(1, entre(t.fecha, hasta)), pct = abierta ? Math.min(100, Math.max(0, entre(t.fecha, hoy()) / tot * 100)) : 100;
@@ -924,7 +939,8 @@ function abrirFicha(id) {
         <svg class="i flecha"><use href="#i-adelante"/></svg>
       </button>
       <div class="acciones">
-        <button class="btn pri" data-x="compartir">${ico('compartir')}${fotos.length > 1 ? 'Enviar fotos' : 'Enviar foto'}</button>
+        <button class="btn pri" data-x="guardar">${ico('descargar')}Guardar</button>
+        <button class="btn" data-x="compartir">${ico('compartir')}Enviar</button>
         <button class="btn redondo" data-x="borrar" aria-label="Borrar">${ico('papelera')}</button>
       </div>
       ${e.papelera ? `<button class="btn ancho" data-x="conservar">Conservar un año más</button>` : ''}
@@ -938,22 +954,25 @@ function abrirFicha(id) {
     const a = x.dataset.x;
     if (a === 'cerrar') cerrarCapa();
     else if (a === 'editar') editar(t.id, []);
-    else if (a === 'fotos') fotos.length ? abrirFotos(t) : editar(t.id, []);
+    else if (a === 'fotos') fotos.length ? abrirFotos(t, blobs) : editar(t.id, []);
     else if (a === 'borrar') { if (confirm('¿Borrar este ticket y sus fotos?')) { borrarTicket(t.id); cerrarCapa(); aviso('Ticket borrado'); } }
     else if (a === 'conservar') { t.garHasta = sumarAnios(hoy(), 1); t.garOpc = 'otra'; t.t = Date.now(); pendientes.add(t.id); guardarLocal(); pintarInicio(); programarSync(); cerrarCapa(); aviso('Se conserva hasta ' + fCorta(t.garHasta)); }
-    else if (a === 'compartir') compartirFotos(t, null, x);
+    else if (a === 'compartir') accionFotos(t, blobs, 'enviar');
+    else if (a === 'guardar') accionFotos(t, blobs, 'guardar', x.closest('.acciones').parentNode);
   });
 }
 
 // Pantalla de fotos del ticket (se abre desde la ficha)
-function abrirFotos(t) {
-  const fotos = t.fotos || [], urls = {}, blobs = {};
+function abrirFotos(t, blobs) {
+  blobs = blobs || {};
+  const fotos = t.fotos || [], urls = {};
   let sel = 0;
   const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3>Fotos del ticket</h3>
       <button class="acc" data-x="compartir">Enviar</button></div>
     <div class="envoltura">
       <div class="foto-grande" id="f-foto"></div>
       ${fotos.length > 1 ? `<div class="fotos peque" id="f-tiras">${fotos.map((f, i) => `<button class="ft" data-x="sel" data-i="${i}" aria-label="Foto ${i + 1}">${f.mini ? `<img src="${esc(f.mini)}" alt="">` : `<div class="pdf">${ico('archivo')}<small>PDF</small></div>`}</button>`).join('')}</div>` : ''}
+      <button class="btn ancho pri" data-x="guardar">${ico('descargar')}${fotos.length > 1 ? 'Guardar fotos en el móvil' : 'Guardar en el móvil'}</button>
       <button class="btn ancho" data-x="editar">${ico('camara')}Añadir o quitar fotos</button>
     </div>`, () => Object.values(urls).forEach(u => URL.revokeObjectURL(u)));
   const box = c.querySelector('#f-foto');
@@ -977,7 +996,8 @@ function abrirFotos(t) {
     if (a === 'cerrar') cerrarCapa();
     else if (a === 'sel') mostrar(+x.dataset.i);
     else if (a === 'editar') { cerrarCapa(); cerrarCapa(); editar(t.id, []); }
-    else if (a === 'compartir') compartirFotos(t, blobs, x);
+    else if (a === 'compartir') accionFotos(t, blobs, 'enviar');
+    else if (a === 'guardar') accionFotos(t, blobs, 'guardar', c.querySelector('.envoltura'));
     else if (a === 'ver' && f && urls[f.k]) {
       const vz = document.createElement('div'); vz.className = 'visor';
       vz.innerHTML = `<img src="${urls[f.k]}" alt="Ticket"><button class="cerrar" aria-label="Cerrar">${ico('cerrar')}</button>`;
@@ -1012,13 +1032,17 @@ async function sincronizar() {
         const loc = await fotoLocal(t0, f0); if (!loc) continue;
         const b64 = await aB64(loc.blob);
         let txt = null, fotoId = null;
-        if (f0.leer) txt = ((await api('leer', { b64, mime: f0.mime }, 120000)).texto || '').trim();
+        if (f0.leer) {
+          try { txt = ((await api('leer', { b64, mime: f0.mime }, 120000)).texto || '').trim(); }
+          catch (e) { if (e.message === 'clave' || e.message === 'bloqueado') throw e; f0.fallos = (f0.fallos || 0) + 1; if (f0.fallos >= 3) txt = ''; }
+        }
         if (!f0.fotoId) fotoId = (await api('subir', { id: t0.id + '-' + f0.k, b64, mime: f0.mime }, 120000)).fotoId;
         const t = tickets.find(x => x.id === t0.id), f = t && !t.borrado && (t.fotos || []).find(x => x.k === f0.k);
         if (!f) continue;
         if (fotoId) f.fotoId = fotoId;
+        if (f0.fallos) f.fallos = f0.fallos;
         if (txt !== null) {
-          delete f.leer; leidos = true;
+          delete f.leer; delete f.fallos; leidos = true;
           t.texto = ((t.texto || '') + '\n' + txt).trim().slice(0, 8000);
           aplicarLectura(t, analizarTicket(txt, hoy()), k => ({
             tienda: !t.tienda, total: t.total == null, num: !t.num, concepto: !t.concepto,
@@ -1032,18 +1056,21 @@ async function sincronizar() {
     // 2. Datos
     const envio = tickets.filter(t => pendientes.has(t.id));
     const marcas = {}; envio.forEach(t => marcas[t.id] = t.t);
-    const j = await api('sync', { tickets: envio });
+    let desde = 0; try { desde = Number(localStorage.getItem('mt-desde') || 0); } catch (e) {}
+    const j = await api('sync', { tickets: envio, desde });
     const local = {}; tickets.forEach(t => local[t.id] = t);
-    const nuevos = j.tickets.map(s => { const l = local[s.id]; return l && (l.t || 0) > (s.t || 0) ? l : s; });
-    const ids = new Set(nuevos.map(t => t.id));
-    tickets.forEach(t => { if (!ids.has(t.id) && pendientes.has(t.id)) nuevos.push(t); });
+    // parcial: el servidor solo manda lo que cambió desde la última vez; si no, manda todo
+    const base = {};
+    tickets.forEach(t => { if (j.parcial || pendientes.has(t.id)) base[t.id] = t; });
+    (j.tickets || []).forEach(s => { const l = local[s.id]; base[s.id] = l && (l.t || 0) > (s.t || 0) ? l : s; });
     const antes = JSON.stringify(vivos().map(t => t.id + t.t));
-    nuevos.forEach(n => {
-      const l = local[n.id]; if (!l || l.borrado || l === n) return;
-      if (n.borrado) borrarLocales(l);
+    Object.values(local).forEach(l => {
+      const n = base[l.id]; if (l.borrado || n === l) return;
+      if (!n || n.borrado) borrarLocales(l);
       else (l.fotos || []).forEach(f => { if (!(n.fotos || []).some(g => g.k === f.k)) idb.del(claveImg(l, f)); });
     });
-    tickets = nuevos.map(migrar);
+    tickets = Object.values(base).map(migrar);
+    if (j.ahora) try { localStorage.setItem('mt-desde', String(j.ahora)); } catch (e) {}
     envio.forEach(t => { const a = local[t.id]; if (!a || a.t === marcas[t.id]) pendientes.delete(t.id); });
     estadoSync = 'ok'; guardarLocal(); purgarLocal();
     if (antes !== JSON.stringify(vivos().map(t => t.id + t.t))) pintarInicio();
@@ -1102,7 +1129,7 @@ function abrirAjustes() {
       if (url && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)) return aviso('La dirección debe terminar en /exec');
       const primera = !cfg.url && url;
       cfg.url = url; cfg.clave = clave;
-      try { localStorage.setItem('mt-url', url); localStorage.setItem('mt-clave', clave); localStorage.removeItem('mt-clave-mala'); } catch (e) {}
+      try { localStorage.setItem('mt-url', url); localStorage.setItem('mt-clave', clave); localStorage.removeItem('mt-clave-mala'); localStorage.removeItem('mt-desde'); } catch (e) {}
       if (!url) { est(); return aviso('Guardado sin sincronización'); }
       if (primera) tickets.forEach(t => pendientes.add(t.id));
       x.disabled = true; estadoSync = '';
@@ -1114,7 +1141,7 @@ function abrirAjustes() {
 }
 
 /* ---------- Arranque ---------- */
-purgarLocal(); pintarInicio(); punto(); sincronizar();
+cargarTickets().then(() => { purgarLocal(); pintarInicio(); punto(); sincronizar(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 </script>
 </body>
