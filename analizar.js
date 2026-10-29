@@ -136,6 +136,21 @@
       }
       if (r.productos.length >= 12) break;
     }
+    // Identificador de cliente/compra (miMediaMarkt, socio, tarjeta de cliente…)
+    for (let i = 0; i < lineas.length && !r.ident; i++) {
+      if (!/(identificador|n[ºo°.]?\s*socio|socio|cliente|fidelizaci)/i.test(lineas[i])) continue;
+      const m = (lineas[i] + ' ' + (lineas[i + 1] || '')).match(/(\d[\d ]{7,22}\d)/);
+      if (m) r.ident = m[1].replace(/\s/g, '');
+    }
+    // Número del código de barras: la línea más larga solo de cifras (12+), sin tarjetas ni teléfonos
+    let mejorB = '';
+    for (const l of lineas) {
+      if (!/^[\d\s]+$/.test(l)) continue;
+      const d = l.replace(/\s/g, '');
+      if (d.length >= 12 && d.length <= 40 && d !== r.ident && d.length > mejorB.length) mejorB = d;
+    }
+    if (mejorB) r.barras = mejorB;
+
     // Plazos impresos en el ticket: «CAMBIOS Y DEVOLUCIONES: 60 DÍAS», «garantía 2 años»
     const plano1 = norm(lineas.join(' '));
     const md = plano1.match(/(?:devoluci[oó]n|devoluciones|cambios)[^\d]{0,40}?(\d{1,3})\s*d[ií]as/);
