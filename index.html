@@ -157,6 +157,10 @@ nav.barra .tab.on{color:var(--ink);font-weight:700}
 .fila-fotos .t{flex:1;display:flex;flex-direction:column}
 .fila-fotos .t b{font-size:15px}.fila-fotos .t small{font-size:12.5px;color:var(--sec)}
 .fila-fotos svg.flecha{width:18px;height:18px}
+.fila-fotos .mini svg.i{width:20px;height:20px;color:var(--ink)}
+.enlace-osc{border:0;background:transparent;color:var(--inv-txt);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;height:44px;margin:-6px 0 -8px;opacity:.9}
+.enlace-osc svg.i{width:18px;height:18px}
+.capa textarea{font-family:inherit}
 
 .foto-grande{background:var(--card);border-radius:var(--r);overflow:hidden;display:grid;place-items:center;min-height:200px;max-height:66vh;position:relative}
 .foto-grande img{width:100%;max-height:66vh;object-fit:contain;display:block;background:var(--soft2)}
@@ -275,6 +279,8 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
   <symbol id="i-ampliar" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
   <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="i-descargar" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></symbol>
+  <symbol id="i-mensaje" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+  <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
   <symbol id="i-adelante" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.5L4 8.5M4 13a8 8 0 0 0 14.3 4.5L20 15.5"/><path d="M4 4v4.5h4.5M20 20v-4.5h-4.5"/></symbol>
 </svg>
@@ -303,9 +309,10 @@ details.texto pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;ba
 
 <script src="analizar.js"></script>
 <script src="barras.js"></script>
+<script src="extras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v6';
+const VERSION = 'v7';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -858,6 +865,13 @@ async function obtenerFoto(t, f) {
   const j = await api('foto', { fotoId: f.fotoId });
   const v = { blob: deB64(j.b64, j.mime), mime: j.mime };
   idb.set(claveImg(t, f), v).catch(() => {});
+  if (!f.mini && /^image\//.test(j.mime)) {
+    cargarImagen(v.blob).then(img => {
+      const real = tickets.find(x => x.id === t.id), g = real && (real.fotos || []).find(x => x.k === f.k);
+      if (!g || g.mini) return;
+      g.mini = aMini(lienzo(img, 600)); real.t = Date.now(); pendientes.add(real.id); guardarLocal(); programarSync(4000);
+    }).catch(() => {});
+  }
   return v;
 }
 // Título de un ticket: lo comprado; debajo, la tienda
@@ -892,6 +906,7 @@ function abrirFicha(id) {
   const t = tickets.find(x => x.id === id); if (!t || t.borrado) return;
   const e = estado(t), fotos = t.fotos || [], blobs = {};
   precargar(t, blobs);
+  let resg = null; if (window.extras) extras.resguardo(t, titulo(t)).then(b => resg = b).catch(() => {});
   const dia = s => { const d = aFecha(s); return d.getDate() + ' ' + MES[d.getMonth()]; };
   const ruta = (tipo, hasta, abierta, dias) => {
     const tot = Math.max(1, entre(t.fecha, hasta)), pct = abierta ? Math.min(100, Math.max(0, entre(t.fecha, hoy()) / tot * 100)) : 100;
@@ -932,10 +947,16 @@ function abrirFicha(id) {
         ${t.total != null ? `<div class="total"><span>Total pagado</span><b>${eur(t.total)}</b></div>` : ''}
         ${filas.length ? `<div class="filas">${filas.map(d => `<div class="fd"><span>${d[0]}</span><b>${esc(d[1])}</b></div>`).join('')}</div>` : ''}
         ${barras ? `<div class="codigo">${barras}<span>${esc(t.barras)}</span></div>` : ''}
+        <button class="enlace-osc" data-x="resguardo">${ico('descargar')}Guardar resguardo en Fotos</button>
       </div>` : ''}
       <button class="fila-fotos" data-x="fotos">
         <span class="mini">${f0 && f0.mini ? `<img src="${esc(f0.mini)}" alt="">` : ico(esPdf(f0) ? 'archivo' : 'ticket')}</span>
         <span class="t"><b>${fotos.length ? 'Fotos del ticket' : 'Sin fotos'}</b><small>${fotos.length ? fotos.length + (fotos.length === 1 ? ' foto' : ' fotos') + ' · ver y ampliar' : 'Añadir una foto del ticket'}</small></span>
+        <svg class="i flecha"><use href="#i-adelante"/></svg>
+      </button>
+      <button class="fila-fotos" data-x="reclamar">
+        <span class="mini">${ico('mensaje')}</span>
+        <span class="t"><b>Reclamar o devolver</b><small>Texto listo para la tienda, con el ticket adjunto</small></span>
         <svg class="i flecha"><use href="#i-adelante"/></svg>
       </button>
       <div class="acciones">
@@ -959,6 +980,55 @@ function abrirFicha(id) {
     else if (a === 'conservar') { t.garHasta = sumarAnios(hoy(), 1); t.garOpc = 'otra'; t.t = Date.now(); pendientes.add(t.id); guardarLocal(); pintarInicio(); programarSync(); cerrarCapa(); aviso('Se conserva hasta ' + fCorta(t.garHasta)); }
     else if (a === 'compartir') accionFotos(t, blobs, 'enviar');
     else if (a === 'guardar') accionFotos(t, blobs, 'guardar', x.closest('.acciones').parentNode);
+    else if (a === 'reclamar') abrirReclamar(t, blobs);
+    else if (a === 'resguardo') {
+      if (!resg) return aviso('Preparando el resguardo… vuelve a pulsar');
+      const file = new File([resg], 'Resguardo ' + (titulo(t) + ' ' + (t.fecha || '')).replace(/[^\w\- áéíóúñü]/gi, '').slice(0, 60) + '.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) navigator.share({ files: [file] }).catch(() => {});
+      else { const l = document.createElement('a'); l.href = URL.createObjectURL(file); l.download = file.name; document.body.appendChild(l); l.click(); l.remove(); }
+    }
+  });
+}
+
+// Reclamar: texto para la tienda (devolución o garantía) y envío con las fotos adjuntas
+function abrirReclamar(t, blobs) {
+  const e = estado(t);
+  let tipo = e.devAbierta ? 'dev' : 'gar', problema = '', tocadoTexto = false;
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3>Reclamar o devolver</h3><span style="width:46px"></span></div>
+    <div class="envoltura">
+      <div class="opciones" id="r-tipo" style="margin-top:4px"><button data-v="dev" style="grid-column:span 2">Devolución</button><button data-v="gar" style="grid-column:span 2">Garantía</button></div>
+      <p class="nota-form" id="r-estado"></p>
+      <div class="bloque"><label class="campo"><span>Qué le pasa (opcional)</span><textarea id="r-problema" rows="2" placeholder="Ej. La batería no carga desde la primera semana"></textarea></label></div>
+      <div class="bloque"><label class="campo"><span>Mensaje para la tienda</span><textarea id="r-texto" rows="12" style="font-weight:500;font-size:15px;line-height:1.5"></textarea></label></div>
+      <button class="btn ancho pri" data-x="enviar">${ico('compartir')}Enviar con ${(t.fotos || []).length ? 'el ticket adjunto' : 'el texto'}</button>
+      <button class="btn ancho" data-x="copiar">${ico('copiar')}Copiar el texto</button>
+      <p class="nota-form">Si la tienda no responde o no te da solución, puedes pedir la hoja de reclamaciones en la tienda o reclamar en la oficina de consumo (OMIC) de tu ayuntamiento o de tu comunidad autónoma.</p>
+    </div>`);
+  const v = s => c.querySelector(s);
+  const pintar = () => {
+    c.querySelectorAll('#r-tipo button').forEach(b => b.classList.toggle('on', b.dataset.v === tipo));
+    const abierto = tipo === 'dev' ? e.devAbierta : e.garAbierta, hasta = tipo === 'dev' ? t.devHasta : t.garHasta;
+    v('#r-estado').textContent = !hasta ? (tipo === 'dev' ? 'Este ticket no tiene plazo de devolución guardado.' : 'Este ticket no tiene garantía guardada.')
+      : abierto ? (tipo === 'dev' ? 'Puedes devolverlo hasta el ' : 'En garantía hasta el ') + fCorta(hasta) + '.' : 'Ojo: este plazo terminó el ' + fCorta(hasta) + '.';
+    if (!tocadoTexto) v('#r-texto').value = extras.reclamacion(t, titulo(t), tipo, problema);
+  };
+  pintar();
+  v('#r-tipo').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) { tipo = b.dataset.v; pintar(); } });
+  v('#r-problema').addEventListener('input', ev => { problema = ev.target.value; pintar(); });
+  v('#r-texto').addEventListener('input', () => tocadoTexto = true);
+  c.addEventListener('click', ev => {
+    const x = ev.target.closest('[data-x]'); if (!x) return;
+    const texto = v('#r-texto').value;
+    if (x.dataset.x === 'cerrar') cerrarCapa();
+    else if (x.dataset.x === 'copiar') { (navigator.clipboard ? navigator.clipboard.writeText(texto) : Promise.reject()).then(() => aviso('Texto copiado')).catch(() => { v('#r-texto').select(); aviso('Selecciona y copia el texto'); }); }
+    else if (x.dataset.x === 'enviar') {
+      const fotos = t.fotos || [];
+      if (fotos.some(f => !blobs[f.k])) { aviso('Preparando el ticket… vuelve a pulsar en un momento'); precargar(t, blobs); return; }
+      const files = fotos.map((f, i) => new File([blobs[f.k].blob], 'Ticket ' + (i + 1) + (esPdf(blobs[f.k]) ? '.pdf' : '.jpg'), { type: blobs[f.k].mime }));
+      const datos = files.length && navigator.canShare && navigator.canShare({ files }) ? { files, text: texto } : { text: texto };
+      if (navigator.share) navigator.share(datos).catch(() => {});
+      else location.href = 'mailto:?subject=' + encodeURIComponent('Reclamación: ' + titulo(t)) + '&body=' + encodeURIComponent(texto);
+    }
   });
 }
 
@@ -1072,6 +1142,16 @@ async function sincronizar() {
     tickets = Object.values(base).map(migrar);
     if (j.ahora) try { localStorage.setItem('mt-desde', String(j.ahora)); } catch (e) {}
     envio.forEach(t => { const a = local[t.id]; if (!a || a.t === marcas[t.id]) pendientes.delete(t.id); });
+    // Facturas de Gmail: el servidor guarda el texto y aquí se sacan los datos
+    let analizados = 0;
+    tickets.forEach(t => {
+      if (!t.analizar || t.borrado) return;
+      aplicarLectura(t, analizarTicket(t.texto || '', hoy()), k => ({
+        tienda: !t.tienda, total: t.total == null, num: !t.num, concepto: !t.concepto, fecha: false, plazos: !t.plazosManual
+      })[k]);
+      delete t.analizar; t.t = Date.now(); pendientes.add(t.id); analizados++;
+    });
+    if (analizados) programarSync(2000);
     estadoSync = 'ok'; guardarLocal(); purgarLocal();
     if (antes !== JSON.stringify(vivos().map(t => t.id + t.t))) pintarInicio();
   } catch (e) {
@@ -1108,11 +1188,17 @@ function abrirAjustes() {
       </div>
       <button class="btn ancho pri" data-x="probar">${ico('sync')}Guardar y sincronizar</button>
       <p>Las fotos y los datos se guardan en tu Google Drive (carpeta «Mis Tickets») y se sincronizan entre el iPhone y el iPad. Los avisos llegan por Google Calendar: 3 días antes del último día de devolución y 3 semanas antes de que acabe la garantía.</p>
+      <h2 class="sec">Facturas de Gmail</h2>
+      <div class="bloque"><div class="dato" style="display:block"><div style="font-weight:600;line-height:1.5;font-size:14.5px">Pon la etiqueta <b>«Tickets»</b> a un correo de compra (en Gmail: <i>Mover a › Tickets</i>) y aparecerá aquí en menos de una hora, con su PDF o con el propio correo guardado en PDF.</div></div></div>
+      <button class="btn ancho" data-x="gmail">${ico('sync')}Buscar facturas ahora</button>
+      <h2 class="sec">Copia de seguridad</h2>
+      <div class="bloque"><div class="dato" style="display:block"><div style="font-weight:600;line-height:1.5;font-size:14.5px" id="a-copia">Un ZIP con todas las fotos, un resumen para Excel y los datos. Además, el script guarda una copia de los datos cada semana en Drive.</div></div></div>
+      <button class="btn ancho" data-x="copia">${ico('descargar')}Preparar copia completa</button>
       <h2 class="sec">Borrado automático</h2>
       <div class="bloque"><div class="dato"><div class="k">Tickets</div><div class="v">${n} guardados${np ? ' · ' + np + ' en la papelera' : ''}${ni ? ' · ' + ni + ' sin borrar nunca' : ''}</div></div>
         <div class="dato"><div class="k">Cuándo</div><div class="v" style="font-weight:600">Cuando vencen la devolución y la garantía, el ticket pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con sus fotos, también de Drive. Los marcados «No borrar nunca» se quedan siempre.</div></div></div>
 
-    </div>`, () => { $('#t-ajustes').classList.remove('on'); $('#t-inicio').classList.add('on'); });
+    </div>`, () => { copiaZip = null; $('#t-ajustes').classList.remove('on'); $('#t-inicio').classList.add('on'); });
   c.querySelector('#a-url').value = cfg.url; c.querySelector('#a-clave').value = cfg.clave;
   const est = () => {
     const e = c.querySelector('#a-estado');
@@ -1124,6 +1210,14 @@ function abrirAjustes() {
   c.addEventListener('click', async ev => {
     const x = ev.target.closest('[data-x]'); if (!x) return;
     if (x.dataset.x === 'cerrar') return cerrarCapa();
+    if (x.dataset.x === 'gmail') {
+      if (!cfg.url) return aviso('Primero conecta el script de Google');
+      x.disabled = true; aviso('Buscando en Gmail…');
+      try { const j = await api('gmail', {}, 120000); aviso(j.nuevos ? (j.nuevos === 1 ? '1 factura nueva' : j.nuevos + ' facturas nuevas') : 'No hay correos nuevos con la etiqueta «Tickets»'); if (j.nuevos) await sincronizar(); }
+      catch (e) { aviso(e.message === 'accion' ? 'Actualiza el script de Google para usar esto' : 'No se pudo buscar ahora'); }
+      x.disabled = false; return;
+    }
+    if (x.dataset.x === 'copia') { prepararCopia(x, c.querySelector('#a-copia')); return; }
     if (x.dataset.x === 'probar') {
       const url = c.querySelector('#a-url').value.trim(), clave = c.querySelector('#a-clave').value;
       if (url && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)) return aviso('La dirección debe terminar en /exec');
@@ -1138,6 +1232,43 @@ function abrirAjustes() {
       x.disabled = false; est(); punto();
     }
   });
+}
+
+/* ---------- Copia completa (ZIP) ---------- */
+let copiaZip = null;
+async function prepararCopia(boton, info) {
+  if (copiaZip) {                                         // segunda pulsación: guardar (el menú se abre al instante)
+    const file = copiaZip;
+    if (navigator.canShare && navigator.canShare({ files: [file] })) navigator.share({ files: [file] }).catch(() => {});
+    else { const l = document.createElement('a'); l.href = URL.createObjectURL(file); l.download = file.name; document.body.appendChild(l); l.click(); l.remove(); }
+    return;
+  }
+  boton.disabled = true;
+  const lista = vivos(), archivos = [], enc = new TextEncoder(), usados = {};
+  let faltan = 0, hechas = 0;
+  const total = lista.reduce((s, t) => s + (t.fotos || []).length, 0);
+  const limpio = s => String(s || '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 50);
+  try {
+    for (const t of lista) for (const [i, f] of (t.fotos || []).entries()) {
+      info.textContent = `Preparando fotos ${++hechas} de ${total}…`;
+      const r = await obtenerFoto(t, f).catch(() => null);
+      if (!r) { faltan++; continue; }
+      let nom = `fotos/${t.fecha || 'sin-fecha'} ${limpio(titulo(t))}${(t.fotos || []).length > 1 ? ' (' + (i + 1) + ')' : ''}${esPdf(r) ? '.pdf' : '.jpg'}`;
+      while (usados[nom]) nom = nom.replace(/(\.\w+)$/, ' bis$1'); usados[nom] = 1;
+      archivos.push({ nombre: nom, datos: new Uint8Array(await r.blob.arrayBuffer()) });
+    }
+    const csv = n => '"' + String(n ?? '').replace(/"/g, '""') + '"';
+    const filas = [['Producto', 'Tienda', 'Fecha', 'Importe', 'Nº ticket', 'Identificador', 'Devolución hasta', 'Garantía hasta', 'No borrar', 'Fotos', 'Notas']]
+      .concat(lista.map(t => [titulo(t), t.tienda, t.fecha, t.total != null ? String(t.total.toFixed(2)).replace('.', ',') : '', t.num, t.ident, t.devHasta, t.garHasta, t.importante ? 'sí' : '', (t.fotos || []).length, t.notas]));
+    archivos.unshift(
+      { nombre: 'resumen.csv', datos: enc.encode('\uFEFF' + filas.map(f => f.map(csv).join(';')).join('\r\n')) },
+      { nombre: 'datos.json', datos: enc.encode(JSON.stringify({ app: 'Mis Tickets', version: VERSION, fecha: new Date().toISOString(), tickets: lista.map(t => Object.assign({}, t, { fotos: (t.fotos || []).map(f => ({ k: f.k, fotoId: f.fotoId, mime: f.mime })) })) }, null, 1)) });
+    const blob = extras.zip(archivos);
+    copiaZip = new File([blob], `Mis Tickets ${hoy()}.zip`, { type: 'application/zip' });
+    info.textContent = `Copia lista: ${lista.length} tickets, ${archivos.length - 2} fotos (${(blob.size / 1048576).toFixed(1)} MB)${faltan ? `. ${faltan} fotos no se pudieron descargar ahora (sin conexión)` : ''}.`;
+    boton.innerHTML = `${ico('descargar')}Guardar copia en el móvil`;
+  } catch (e) { info.textContent = 'No se pudo preparar la copia: ' + (e.message || e); }
+  boton.disabled = false;
 }
 
 /* ---------- Arranque ---------- */

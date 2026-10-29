@@ -113,7 +113,7 @@
     if (mf) r.nif = mf[1] + mf[2] + mf[3];
 
     // Productos: líneas con importe que no son totales, pagos ni impuestos
-    const EXCL_P = /(total|iva|base|cambio|entregado|efectivo|tarj|visa|master|debit|cr[eé]dit|importe|pago|pagar|abonar|descuento|ahorr|redondeo|cuota|%|fecha|hora|tel[eé.f]|n\.?i\.?f|c\.?i\.?f|factura|ticket|bizum|devoluci|neto|mercanc|cheque|regalo|acumul|puntos|saldo|balance|vale|cup[oó]n|bancaria|autori|operaci)/i;
+    const EXCL_P = /(total|iva|base|cambio|entregado|efectivo|tarj|visa|master\s?card|debit|cr[eé]dit|importe|pago|pagar|abonar|descuento|ahorr|redondeo|cuota|%|fecha|hora|tel[eé.f]|n\.?i\.?f|c\.?i\.?f|factura|ticket|bizum|devoluci|neto|mercanc|cheque|regalo|acumul|puntos|saldo|balance|vale|cup[oó]n|bancaria|autori|operaci)/i;
     const soloTexto = l => !montos(l).length && (l.match(/[a-záéíóúñü]/gi) || []).length >= 3 && !EXCL_P.test(l) && !/^\W*$/.test(l);
     for (const [i, l] of lineas.entries()) {
       if (!montos(l).length || EXCL_P.test(l)) continue;
