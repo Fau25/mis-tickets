@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mis Tickets</title>
+<meta name="theme-color" content="#F4F2ED" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171E" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mis Tickets">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" href="icono-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F2ED; --card:#FFFFFF; --ink:#1E2A3A; --txt:#1E2A3A; --sec:#5E6670; --soft:#E4E8EE; --line:#E3E0D8;
+  --coral:#E2725B; --coral-bg:#FBE7E1; --coral-txt:#A3412C; --ok:#3E8E6A; --warn:#C98A1B;
+  --barra:rgba(244,242,237,.82); --sombra:0 1px 2px rgba(30,42,58,.06),0 4px 14px rgba(30,42,58,.05);
+  --r:16px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#12171E; --card:#1C232C; --ink:#E9EEF3; --txt:#EEF1F4; --sec:#A3ADB8; --soft:#2A3440; --line:#2A323C;
+  --coral:#F08A74; --coral-bg:#3A2420; --coral-txt:#FFB4A3; --barra:rgba(18,23,30,.8); --sombra:none;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Nunito,system-ui,-apple-system,sans-serif;font-size:16px;-webkit-text-size-adjust:100%}
+body{min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.oculto{display:none!important}
+.envoltura{max-width:720px;margin:0 auto;padding:0 16px}
+
+/* Cabecera */
+header.cab{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 0 8px}
+.cab .fila{display:flex;align-items:center;gap:10px}
+.cab h1{font-size:28px;font-weight:800;margin:0;letter-spacing:-.3px;color:var(--ink)}
+.punto{width:9px;height:9px;border-radius:50%;background:#B9C0C8;margin-top:6px;border:0;padding:0}
+.punto.ok{background:var(--ok)}.punto.pend{background:var(--warn)}.punto.err{background:var(--coral)}
+.cab .der{margin-left:auto}
+.boton-icono{width:42px;height:42px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;color:var(--ink)}
+.boton-icono:active{background:var(--soft)}
+
+.buscar{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:14px;padding:0 14px;height:46px;margin-top:10px;box-shadow:var(--sombra);color:var(--sec)}
+.buscar input{border:0;outline:0;background:transparent;flex:1;height:100%;color:var(--txt);font-size:16px}
+.buscar input::placeholder{color:var(--sec)}
+
+.filtros{display:grid;grid-template-columns:repeat(4,1fr);background:var(--soft);border-radius:12px;padding:3px;margin-top:12px}
+.filtros button{border:0;background:transparent;border-radius:9px;padding:8px 2px;font-size:14px;font-weight:700;color:var(--sec)}
+.filtros button.on{background:var(--card);color:var(--ink);box-shadow:var(--sombra)}
+
+.aviso{display:flex;align-items:center;gap:10px;background:var(--coral-bg);color:var(--coral-txt);border-radius:14px;padding:12px 14px;margin-top:14px;font-weight:700;font-size:15px}
+
+h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--sec);font-weight:800;margin:22px 4px 8px}
+.lista{display:flex;flex-direction:column;gap:10px}
+.ticket{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:var(--r);padding:12px;box-shadow:var(--sombra);border:0;text-align:left;width:100%}
+.ticket:active{transform:scale(.99)}
+.mini{width:54px;height:64px;border-radius:10px;background:var(--soft);flex:none;object-fit:cover;display:grid;place-items:center;color:var(--sec);overflow:hidden}
+.mini img{width:100%;height:100%;object-fit:cover}
+.ticket .cuerpo{flex:1;min-width:0}
+.ticket .t1{display:flex;gap:8px;align-items:baseline}
+.ticket .tienda{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;color:var(--ink)}
+.ticket .importe{font-weight:800;font-size:15px;white-space:nowrap}
+.ticket .concepto{color:var(--sec);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.ticket .t3{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.ticket .fecha{color:var(--sec);font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--soft);color:var(--ink);white-space:nowrap}
+.chip.alerta{background:var(--coral-bg);color:var(--coral-txt)}
+.chip svg.i{width:14px;height:14px}
+
+.vacio{text-align:center;color:var(--sec);padding:48px 20px}
+.vacio svg.i{width:48px;height:48px;stroke-width:1.3;margin-bottom:10px}
+.vacio b{display:block;color:var(--ink);font-size:18px;margin-bottom:4px}
+
+/* Barra inferior */
+nav.barra{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--barra);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+nav.barra .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+nav.barra .tab{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:700;color:var(--sec);padding:4px}
+nav.barra .tab.on{color:var(--ink)}
+.mas{width:60px;height:60px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);display:grid;place-items:center;margin-top:-26px;box-shadow:0 6px 18px rgba(30,42,58,.28)}
+.mas svg.i{width:28px;height:28px;stroke-width:2}
+
+/* Pantallas superpuestas */
+.capa{position:fixed;inset:0;z-index:10;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(30px + env(safe-area-inset-bottom));animation:entra .22s ease}
+@keyframes entra{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.capa .top{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:6px;padding:calc(8px + env(safe-area-inset-top)) 8px 8px}
+.capa .top h3{font-size:18px;font-weight:800;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.capa .top .acc{border:0;background:transparent;font-weight:800;color:var(--ink);padding:8px 10px;font-size:16px}
+
+.foto-grande{background:var(--soft);border-radius:var(--r);overflow:hidden;display:grid;place-items:center;min-height:130px;max-height:52vh;position:relative}
+.foto-grande img{width:100%;max-height:52vh;object-fit:contain;display:block;background:#0f141a}
+.foto-grande .ph{color:var(--sec);text-align:center;padding:28px;font-size:14px}
+.foto-grande .lupa{position:absolute;right:10px;bottom:10px;background:rgba(18,23,30,.6);color:#fff;border-radius:999px;padding:6px 10px;font-size:12.5px;font-weight:700;display:flex;gap:5px;align-items:center;border:0}
+
+.bloque{background:var(--card);border-radius:var(--r);padding:4px 16px;margin-top:14px;box-shadow:var(--sombra)}
+.dato{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.dato:last-child{border-bottom:0}
+.dato .k{color:var(--sec);font-size:14px;width:96px;flex:none;padding-top:1px}
+.dato .v{flex:1;font-weight:700;word-break:break-word}
+.titulo-ficha{margin:16px 2px 0}
+.titulo-ficha .tn{font-size:24px;font-weight:800;color:var(--ink);line-height:1.2}
+.titulo-ficha .sub{color:var(--sec);margin-top:2px}
+
+.plazo{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.plazo:last-child{border-bottom:0}
+.plazo .ico{width:40px;height:40px;border-radius:12px;background:var(--soft);display:grid;place-items:center;color:var(--ink);flex:none}
+.plazo.alerta .ico{background:var(--coral-bg);color:var(--coral-txt)}
+.plazo .pt{font-weight:800}.plazo .ps{color:var(--sec);font-size:14px}
+.barrita{height:6px;border-radius:99px;background:var(--soft);margin-top:7px;overflow:hidden}
+.barrita i{display:block;height:100%;background:var(--ink);border-radius:99px}
+.plazo.alerta .barrita i{background:var(--coral)}
+
+.botones{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.btn{border:0;border-radius:14px;padding:13px 10px;font-weight:800;background:var(--card);color:var(--ink);box-shadow:var(--sombra);display:flex;align-items:center;justify-content:center;gap:7px;font-size:15px}
+.btn.pri{background:var(--ink);color:var(--bg);box-shadow:none}
+.btn.peligro{color:var(--coral-txt)}
+.btn.ancho{width:100%;margin-top:14px;padding:15px}
+.btn:disabled{opacity:.5}
+.col{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;padding:12px 6px}
+
+details.texto{margin-top:14px}
+details.texto summary{color:var(--sec);font-weight:700;font-size:14px;padding:6px 2px;list-style:none}
+details.texto pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--card);border-radius:12px;padding:12px;color:var(--sec);max-height:300px;overflow:auto}
+
+/* Formulario */
+.campo{display:block;padding:10px 0;border-bottom:1px solid var(--line)}
+.campo:last-child{border-bottom:0}
+.campo span{display:block;color:var(--sec);font-size:13px;font-weight:700;margin-bottom:3px}
+.campo input,.campo textarea{width:100%;border:0;outline:0;background:transparent;font-size:17px;font-weight:700;padding:2px 0;color:var(--txt)}
+.campo textarea{resize:vertical;min-height:44px;font-weight:600}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.opciones{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+.opciones button{border:0;background:var(--soft);border-radius:10px;padding:9px 2px;font-weight:700;font-size:14px;color:var(--ink)}
+.opciones button.on{background:var(--ink);color:var(--bg)}
+.hasta{color:var(--sec);font-size:13.5px;margin-top:7px;min-height:18px}
+.hasta input{border:0;background:var(--soft);border-radius:8px;padding:4px 8px;font-weight:700;color:var(--txt)}
+.nota-form{color:var(--sec);font-size:13px;padding:10px 4px 0;line-height:1.45}
+
+.elegir{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.elegir label{background:var(--card);border-radius:var(--r);box-shadow:var(--sombra);padding:22px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:800;color:var(--ink);text-align:center}
+.elegir label svg.i{width:30px;height:30px}
+.elegir small{color:var(--sec);font-weight:600}
+.leyendo{display:flex;align-items:center;gap:10px;color:var(--sec);font-weight:700;padding:12px 2px}
+.rueda{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--soft);border-top-color:var(--ink);animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.leido{display:flex;gap:8px;align-items:center;background:var(--soft);border-radius:12px;padding:10px 12px;margin-top:12px;font-size:14px;font-weight:700;color:var(--ink)}
+
+/* Visor */
+.visor{position:fixed;inset:0;z-index:30;background:#0b0f14;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom}
+.visor img{display:block;width:100%;height:auto;min-height:100%;object-fit:contain;transition:width .2s}
+.visor img.zoom{width:220%;max-width:none}
+.visor .cerrar{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;display:grid;place-items:center}
+
+.toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-weight:700;font-size:14.5px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100% - 32px);text-align:center}
+
+.ajustes p{color:var(--sec);font-size:14px;line-height:1.5;margin:8px 4px}
+.estado-sync{display:flex;gap:10px;align-items:center;font-weight:700;padding:14px 0}
+@media (min-width:760px){.lista{display:grid;grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M6 2.8h12v18.4l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 7.5h6M9 11h6M9 14.5h3.5"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-casa" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-ajustes" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-lupa" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-atras" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-camara" viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.6"/></symbol>
+  <symbol id="i-archivo" viewBox="0 0 24 24"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-volver" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3 5 6v5.5c0 4.4 3 8.2 7 9.5 4-1.3 7-5.1 7-9.5V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-compartir" viewBox="0 0 24 24"><path d="M12 15V3.5M8 7.5l4-4 4 4"/><path d="M7 11H5.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H17"/></symbol>
+  <symbol id="i-lapiz" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+  <symbol id="i-papelera" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.2"/></symbol>
+  <symbol id="i-ampliar" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.5L4 8.5M4 13a8 8 0 0 0 14.3 4.5L20 15.5"/><path d="M4 4v4.5h4.5M20 20v-4.5h-4.5"/></symbol>
+</svg>
+
+<header class="cab"><div class="envoltura">
+  <div class="fila">
+    <h1>Mis Tickets</h1><button class="punto" id="punto" aria-label="Estado de sincronización"></button>
+    <button class="boton-icono der" id="b-ajustes-cab" aria-label="Ajustes"><svg class="i"><use href="#i-ajustes"/></svg></button>
+  </div>
+  <label class="buscar"><svg class="i"><use href="#i-lupa"/></svg><input id="buscar" type="search" placeholder="Buscar tienda o producto" autocomplete="off"></label>
+  <div class="filtros" id="filtros">
+    <button data-f="todos" class="on">Todos</button><button data-f="dev">Devolución</button><button data-f="gar">Garantía</button><button data-f="papelera">Papelera</button>
+  </div>
+</div></header>
+
+<main class="envoltura" id="inicio"></main>
+
+<nav class="barra"><div class="in">
+  <button class="tab on" id="t-inicio"><svg class="i"><use href="#i-casa"/></svg>Inicio</button>
+  <button class="mas" id="b-mas" aria-label="Añadir ticket"><svg class="i"><use href="#i-mas"/></svg></button>
+  <button class="tab" id="t-ajustes"><svg class="i"><use href="#i-ajustes"/></svg>Ajustes</button>
+</div></nav>
+
+<input type="file" id="f-camara" accept="image/*" capture="environment" class="oculto">
+<input type="file" id="f-archivo" accept="image/*,application/pdf" class="oculto">
+
+<script src="analizar.js"></script>
+<script>
+'use strict';
+const VERSION = 'v1';
+const $ = s => document.querySelector(s);
+const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const eur = n => n == null || isNaN(n) ? '' : new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+const DIAS_PAPELERA = 30;
+
+/* ---------- Fechas ---------- */
+const isoLocal = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const hoy = () => isoLocal(new Date());
+const aFecha = s => { const [a, m, d] = s.split('-').map(Number); return new Date(a, m - 1, d); };
+const sumarDias = (s, n) => { const d = aFecha(s); d.setDate(d.getDate() + n); return isoLocal(d); };
+const sumarAnios = (s, n) => { const d = aFecha(s); d.setFullYear(d.getFullYear() + n); return isoLocal(d); };
+const entre = (a, b) => Math.round((aFecha(b) - aFecha(a)) / 86400000);
+const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const fCorta = s => { if (!s) return ''; const d = aFecha(s); return d.getDate() + ' ' + MES[d.getMonth()] + ' ' + d.getFullYear(); };
+const fMes = s => { const d = aFecha(s); return MES[d.getMonth()] + ' ' + d.getFullYear(); };
+const quedan = n => n === 0 ? 'hoy es el último día' : n === 1 ? 'queda 1 día' : 'quedan ' + n + ' días';
+
+/* ---------- Almacenamiento ---------- */
+let tickets = [];
+try { tickets = JSON.parse(localStorage.getItem('mt-tickets') || '[]'); } catch (e) { tickets = []; }
+let pendientes = new Set();
+try { pendientes = new Set(JSON.parse(localStorage.getItem('mt-pend') || '[]')); } catch (e) {}
+const cfg = { url: '', clave: '' };
+try { cfg.url = localStorage.getItem('mt-url') || ''; cfg.clave = localStorage.getItem('mt-clave') || ''; } catch (e) {}
+
+function guardarLocal() {
+  try {
+    localStorage.setItem('mt-tickets', JSON.stringify(tickets));
+    localStorage.setItem('mt-pend', JSON.stringify([...pendientes]));
+  } catch (e) { aviso('El almacenamiento del iPhone está lleno: libera espacio para guardar más tickets'); }
+}
+
+const idb = (() => {
+  let db;
+  const abrir = () => db ? Promise.resolve(db) : new Promise((ok, ko) => {
+    const r = indexedDB.open('mis-tickets', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('img');
+    r.onsuccess = () => { db = r.result; ok(db); }; r.onerror = () => ko(r.error);
+  });
+  const op = (modo, f) => abrir().then(d => new Promise((ok, ko) => {
+    const tx = d.transaction('img', modo), st = tx.objectStore('img'), r = f(st);
+    tx.oncomplete = () => ok(r && r.result); tx.onerror = () => ko(tx.error);
+  }));
+  return {
+    get: k => op('readonly', s => s.get(k)).catch(() => null),
+    set: (k, v) => op('readwrite', s => s.put(v, k)),
+    del: k => op('readwrite', s => s.delete(k)).catch(() => {})
+  };
+})();
+
+/* ---------- Estado de cada ticket ---------- */
+function finDe(t) { const f = [t.devHasta, t.garHasta].filter(Boolean).sort(); return f.length ? f[f.length - 1] : null; }
+function estado(t) {
+  const h = hoy(), fin = finDe(t);
+  const e = { fin, papelera: !!(fin && fin < h), devAbierta: !!(t.devHasta && t.devHasta >= h), garAbierta: !!(t.garHasta && t.garHasta >= h) };
+  if (e.devAbierta) e.diasDev = entre(h, t.devHasta);
+  if (e.garAbierta) e.diasGar = entre(h, t.garHasta);
+  if (e.papelera) e.borraEn = Math.max(0, entre(h, sumarDias(fin, DIAS_PAPELERA)));
+  e.pronto = (e.devAbierta && e.diasDev <= 7) || (e.garAbierta && e.diasGar <= 30);
+  return e;
+}
+const vivos = () => tickets.filter(t => !t.borrado);
+
+// Borrado automático: más de 30 días en la papelera
+function purgarLocal() {
+  const h = hoy(); let cambio = false;
+  tickets = tickets.filter(t => {
+    if (t.borrado) return true;
+    const f = finDe(t);
+    if (f && sumarDias(f, DIAS_PAPELERA) < h) { idb.del('img:' + t.id); cambio = true; t.borrado = true; return !!cfg.url; }
+    return true;
+  }).map(t => t.borrado ? { id: t.id, t: t.t, borrado: true } : t);
+  if (cambio) guardarLocal();
+}
+
+/* ---------- Inicio ---------- */
+let filtro = 'todos', texto = '';
+function chipDe(t, e) {
+  if (e.papelera) return `<span class="chip alerta">${ico('papelera')}Se borra en ${e.borraEn} ${e.borraEn === 1 ? 'día' : 'días'}</span>`;
+  const c = [];
+  if (e.devAbierta) c.push(`<span class="chip ${e.diasDev <= 7 ? 'alerta' : ''}">${ico('volver')}Devolución: ${e.diasDev === 0 ? 'último día' : e.diasDev + (e.diasDev === 1 ? ' día' : ' días')}</span>`);
+  if (e.garAbierta) c.push(`<span class="chip ${e.diasGar <= 30 ? 'alerta' : ''}">${ico('escudo')}Garantía hasta ${fMes(t.garHasta)}</span>`);
+  if (!e.fin) c.push(`<span class="chip">Sin plazos</span>`);
+  return c.join('');
+}
+function fila(t) {
+  const e = estado(t);
+  const mini = t.mini ? `<img src="${esc(t.mini)}" alt="">` : ico(t.tipo === 'pdf' ? 'archivo' : 'ticket');
+  return `<button class="ticket" data-id="${esc(t.id)}">
+    <div class="mini">${mini}</div>
+    <div class="cuerpo">
+      <div class="t1"><span class="tienda">${esc(t.tienda || 'Sin tienda')}</span><span class="importe">${eur(t.total)}</span></div>
+      ${t.concepto ? `<div class="concepto">${esc(t.concepto)}</div>` : ''}
+      <div class="t3"><span class="fecha">${fCorta(t.fecha)}</span>${chipDe(t, e)}</div>
+    </div></button>`;
+}
+function coincide(t) {
+  if (!texto) return true;
+  const n = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const q = n(texto);
+  return [t.tienda, t.concepto, t.num, t.notas, (t.productos || []).join(' '), t.texto].some(x => n(x).includes(q));
+}
+function pintarInicio() {
+  const lista = vivos().filter(coincide).map(t => ({ t, e: estado(t) }));
+  const orden = (a, b) => (b.t.fecha || '').localeCompare(a.t.fecha || '') || (b.t.creado || 0) - (a.t.creado || 0);
+  let html = '';
+  if (filtro === 'papelera') {
+    const p = lista.filter(x => x.e.papelera).sort((a, b) => a.e.borraEn - b.e.borraEn);
+    html += `<p class="nota-form" style="padding-top:16px">Aquí están los tickets con todos los plazos vencidos. Se borran solos (con su foto) a los ${DIAS_PAPELERA} días.</p>`;
+    html += p.length ? `<div class="lista" style="margin-top:8px">${p.map(x => fila(x.t)).join('')}</div>` : vacio('papelera', 'La papelera está vacía', 'Cuando venzan los plazos de un ticket aparecerá aquí.');
+  } else {
+    let l = lista.filter(x => !x.e.papelera);
+    if (filtro === 'dev') l = l.filter(x => x.e.devAbierta).sort((a, b) => a.e.diasDev - b.e.diasDev);
+    else if (filtro === 'gar') l = l.filter(x => x.e.garAbierta).sort((a, b) => a.e.diasGar - b.e.diasGar);
+    else l.sort(orden);
+    const nPronto = vivos().filter(t => estado(t).pronto && !estado(t).papelera).length;
+    if (nPronto && !texto) html += `<div class="aviso">${ico('aviso')}${nPronto === 1 ? '1 ticket vence pronto' : nPronto + ' tickets vencen pronto'}</div>`;
+    if (!l.length) html += texto ? vacio('lupa', 'Nada por aquí', 'No hay tickets que coincidan con la búsqueda.')
+      : vivos().length ? vacio('ticket', 'Ninguno en esta vista', '') : vacio('ticket', 'Aún no hay tickets', 'Pulsa + para hacer una foto a tu primer ticket o factura.');
+    else if (filtro === 'todos') {
+      const pr = l.filter(x => x.e.pronto).sort((a, b) => Math.min(a.e.diasDev ?? 1e9, a.e.diasGar ?? 1e9) - Math.min(b.e.diasDev ?? 1e9, b.e.diasGar ?? 1e9));
+      const resto = l.filter(x => !x.e.pronto);
+      if (pr.length) html += `<h2 class="sec">Vence pronto</h2><div class="lista">${pr.map(x => fila(x.t)).join('')}</div>`;
+      if (resto.length) html += `<h2 class="sec">Guardados · ${resto.length}</h2><div class="lista">${resto.map(x => fila(x.t)).join('')}</div>`;
+    } else html += `<h2 class="sec">${filtro === 'dev' ? 'Se pueden devolver' : 'En garantía'} · ${l.length}</h2><div class="lista">${l.map(x => fila(x.t)).join('')}</div>`;
+  }
+  $('#inicio').innerHTML = html;
+}
+const vacio = (i, t, s) => `<div class="vacio">${ico(i)}<b>${t}</b>${s}</div>`;
+
+$('#inicio').addEventListener('click', e => { const b = e.target.closest('.ticket'); if (b) abrirFicha(b.dataset.id); });
+$('#filtros').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  filtro = b.dataset.f; document.querySelectorAll('#filtros button').forEach(x => x.classList.toggle('on', x === b)); pintarInicio();
+});
+$('#buscar').addEventListener('input', e => { texto = e.target.value.trim(); pintarInicio(); });
+
+/* ---------- Capas ---------- */
+const capas = [];
+function abrirCapa(html, alCerrar) {
+  const c = document.createElement('div'); c.className = 'capa'; c.innerHTML = html; c._cerrar = alCerrar;
+  document.body.appendChild(c); capas.push(c); document.body.style.overflow = 'hidden'; return c;
+}
+function cerrarCapa() {
+  const c = capas.pop(); if (!c) return;
+  c._cerrar && c._cerrar(); c.remove();
+  if (!capas.length) document.body.style.overflow = '';
+}
+
+let toastT;
+function aviso(m) {
+  let t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = m; clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 3200);
+}
+
+/* ---------- Imágenes ---------- */
+function cargarImagen(blob) {
+  return new Promise((ok, ko) => {
+    const u = URL.createObjectURL(blob), img = new Image();
+    img.onload = () => { URL.revokeObjectURL(u); ok(img); }; img.onerror = () => { URL.revokeObjectURL(u); ko(new Error('imagen')); };
+    img.src = u;
+  });
+}
+function reducir(img, max, calidad) {
+  const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+  return { canvas: c, url: () => c.toDataURL('image/jpeg', calidad), blob: () => new Promise(ok => c.toBlob(ok, 'image/jpeg', calidad)) };
+}
+const aB64 = blob => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.readAsDataURL(blob); });
+const deB64 = (b64, mime) => { const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: mime }); };
+
+/* ---------- Conexión con Google ---------- */
+async function api(accion, datos = {}, ms = 90000) {
+  if (!cfg.url || !cfg.clave) throw new Error('sin-config');
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(cfg.url, { method: 'POST', body: JSON.stringify({ clave: cfg.clave, accion, ...datos }), signal: ctl.signal });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error === 'clave' ? 'clave' : j.error === 'bloqueado' ? 'bloqueado' : (j.error || 'error'));
+    return j;
+  } finally { clearTimeout(to); }
+}
+
+/* ---------- Añadir / editar ---------- */
+$('#b-mas').addEventListener('click', () => nuevoTicket());
+function nuevoTicket() {
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Cerrar">${ico('cerrar')}</button><h3>Nuevo ticket</h3></div>
+    <div class="envoltura">
+      <div class="elegir">
+        <label for="f-camara">${ico('camara')}Hacer foto<small>al ticket</small></label>
+        <label for="f-archivo">${ico('archivo')}Elegir archivo<small>foto o factura PDF</small></label>
+      </div>
+      <p class="nota-form">Leo el texto del ticket y relleno tienda, fecha, importe y plazos. Tú solo revisas y guardas.${cfg.url ? '' : ' <b>Para leer los tickets solos, configura la conexión en Ajustes.</b>'}</p>
+      <button class="btn ancho" data-x="manual">Escribir sin foto</button>
+    </div>`);
+  c.addEventListener('click', e => {
+    const x = e.target.closest('[data-x]'); if (!x) return;
+    if (x.dataset.x === 'cerrar') cerrarCapa();
+    if (x.dataset.x === 'manual') { cerrarCapa(); setTimeout(() => editar(null, null), 50); }
+  });
+}
+['#f-camara', '#f-archivo'].forEach(s => $(s).addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (f.size > 15 * 1024 * 1024) return aviso('El archivo es muy grande (máx. 15 MB)');
+  while (capas.length) cerrarCapa();
+  setTimeout(() => editar(null, f), 60);
+}));
+
+async function prepararArchivo(f) {
+  if (f.type === 'application/pdf') return { tipo: 'pdf', blob: f, mime: 'application/pdf', mini: '' };
+  const img = await cargarImagen(f);
+  const g = reducir(img, 2000, .82), m = reducir(img, 180, .6);
+  return { tipo: 'img', blob: await g.blob(), mime: 'image/jpeg', mini: m.url() };
+}
+
+function editar(id, archivo) {
+  const viejo = id ? tickets.find(t => t.id === id) : null;
+  const t = viejo ? JSON.parse(JSON.stringify(viejo)) : {
+    id: 'tk' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), creado: Date.now(),
+    tienda: '', concepto: '', fecha: hoy(), total: null, num: '', nif: '', notas: '', productos: [], texto: '',
+    devOpc: 30, garOpc: 3, devHasta: null, garHasta: null
+  };
+  let prep = null, leyendo = false, tocado = {};
+  const sinFoto = `${ico('ticket')}<br><label for="e-file" class="btn" style="margin:10px auto 0;display:inline-flex">${ico('camara')}Añadir foto</label>`;
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Cerrar">${ico('cerrar')}</button>
+      <h3>${viejo ? 'Editar ticket' : 'Revisar ticket'}</h3><button class="acc" data-x="guardar">Guardar</button></div>
+    <div class="envoltura">
+      <div class="foto-grande" id="e-foto">${archivo ? '<div class="ph"><div class="rueda" style="margin:0 auto 8px"></div>Preparando…</div>' : viejo && viejo.mini ? `<img src="${esc(viejo.mini)}" alt="">` : `<div class="ph">${viejo && viejo.fotoId ? ico('archivo') + '<br>Archivo guardado' : sinFoto}</div>`}</div>
+      <input type="file" id="e-file" accept="image/*,application/pdf" class="oculto">
+      <div id="e-estado"></div>
+      <div class="bloque">
+        <label class="campo"><span>Tienda</span><input id="e-tienda" autocomplete="off"></label>
+        <label class="campo"><span>Qué compraste</span><input id="e-concepto" placeholder="Ej. Auriculares Sony" autocomplete="off"></label>
+        <div class="dos">
+          <label class="campo"><span>Fecha de compra</span><input id="e-fecha" type="date"></label>
+          <label class="campo"><span>Importe (€)</span><input id="e-total" inputmode="decimal" placeholder="0,00"></label>
+        </div>
+        <label class="campo"><span>Nº de ticket o factura</span><input id="e-num" autocomplete="off"></label>
+      </div>
+      <h2 class="sec">Plazos</h2>
+      <div class="bloque">
+        <div class="campo"><span>Devolución</span>
+          <div class="opciones" id="o-dev"><button data-v="0">No</button><button data-v="14">14 días</button><button data-v="30">30 días</button><button data-v="otra">Otra</button></div>
+          <div class="hasta" id="h-dev"></div></div>
+        <div class="campo"><span>Garantía</span>
+          <div class="opciones" id="o-gar"><button data-v="0">No</button><button data-v="1">1 año</button><button data-v="3">3 años</button><button data-v="otra">Otra</button></div>
+          <div class="hasta" id="h-gar"></div></div>
+      </div>
+      <p class="nota-form">En España la garantía legal de un producto nuevo es de 3 años. La devolución depende de la tienda (en compras por internet, mínimo 14 días). Cuando venzan los dos plazos el ticket pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con su foto.</p>
+      <div class="bloque" style="margin-top:14px"><label class="campo"><span>Notas</span><textarea id="e-notas" rows="2" placeholder="Nº de serie, dónde está la caja…"></textarea></label></div>
+      ${viejo ? `<button class="btn ancho peligro" data-x="borrar">${ico('papelera')}Borrar ticket</button>` : ''}
+    </div>`, () => { if (fotoUrl) URL.revokeObjectURL(fotoUrl); });
+  let fotoUrl = null;
+  const v = s => c.querySelector(s);
+  const poner = () => {
+    v('#e-tienda').value = t.tienda || ''; v('#e-concepto').value = t.concepto || ''; v('#e-fecha').value = t.fecha || '';
+    v('#e-total').value = t.total != null ? String(t.total.toFixed(2)).replace('.', ',') : ''; v('#e-num').value = t.num || ''; v('#e-notas').value = t.notas || '';
+    pintarPlazos();
+  };
+  function calcular() {
+    const f = t.fecha || hoy();
+    if (t.devOpc !== 'otra') t.devHasta = t.devOpc ? sumarDias(f, +t.devOpc) : null;
+    if (t.garOpc !== 'otra') t.garHasta = t.garOpc ? sumarAnios(f, +t.garOpc) : null;
+  }
+  function pintarPlazos() {
+    calcular();
+    [['dev', 'devOpc', 'devHasta', 'Devolver hasta el'], ['gar', 'garOpc', 'garHasta', 'Garantía hasta el']].forEach(([k, o, h, txt]) => {
+      v('#o-' + k).querySelectorAll('button').forEach(b => b.classList.toggle('on', String(t[o]) === b.dataset.v));
+      const el = v('#h-' + k);
+      if (t[o] === 'otra') el.innerHTML = `${txt} <input type="date" data-h="${h}" value="${t[h] || ''}">`;
+      else if (t[h]) { const d = entre(hoy(), t[h]); el.textContent = txt + ' ' + fCorta(t[h]) + (d < 0 ? ' · ya vencido' : ''); }
+      else el.textContent = k === 'dev' ? 'Sin devolución' : 'Sin garantía';
+    });
+  }
+  ['dev', 'gar'].forEach(k => v('#o-' + k).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const o = k + 'Opc', h = k + 'Hasta';
+    t[o] = b.dataset.v === 'otra' ? 'otra' : +b.dataset.v;
+    if (t[o] === 'otra' && !t[h]) t[h] = k === 'dev' ? sumarDias(t.fecha || hoy(), 30) : sumarAnios(t.fecha || hoy(), 2);
+    tocado[k] = true; pintarPlazos();
+  }));
+  c.addEventListener('change', e => {
+    if (e.target.dataset.h) t[e.target.dataset.h] = e.target.value || null;
+    if (e.target.id === 'e-fecha') { t.fecha = e.target.value || hoy(); pintarPlazos(); }
+  });
+  ['#e-tienda', '#e-concepto', '#e-total', '#e-num'].forEach(s => v(s).addEventListener('input', () => tocado[s] = true));
+
+  async function mostrarFoto(blob, tipo) {
+    const box = v('#e-foto');
+    if (tipo === 'pdf') { box.innerHTML = `<div class="ph">${ico('archivo')}<br>Factura en PDF</div>`; return; }
+    fotoUrl = URL.createObjectURL(blob); box.innerHTML = `<img src="${fotoUrl}" alt="Foto del ticket">`;
+  }
+  poner();
+  if (viejo) idb.get('img:' + t.id).then(r => r && mostrarFoto(r.blob, t.tipo));
+  v('#e-file').addEventListener('change', ev => {
+    const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+    if (f.size > 15 * 1024 * 1024) return aviso('El archivo es muy grande (máx. 15 MB)');
+    v('#e-foto').innerHTML = '<div class="ph"><div class="rueda" style="margin:0 auto 8px"></div>Preparando…</div>';
+    delete t.fotoId; procesar(f);
+  });
+
+  const procesar = async archivo => {
+    try { prep = await prepararArchivo(archivo); } catch (e) { v('#e-foto').innerHTML = '<div class="ph">No se pudo abrir el archivo</div>'; return; }
+    t.tipo = prep.tipo; t.mini = prep.mini; mostrarFoto(prep.blob, prep.tipo);
+    if (!cfg.url) { v('#e-estado').innerHTML = `<div class="leido">${ico('aviso')}Sin conexión con Google: rellena los datos a mano</div>`; return; }
+    leyendo = true; v('#e-estado').innerHTML = `<div class="leyendo"><div class="rueda"></div>Leyendo el ticket…</div>`;
+    try {
+      const j = await api('leer', { id: t.id, b64: await aB64(prep.blob), mime: prep.mime }, 120000);
+      t.fotoId = j.fotoId; t.texto = (j.texto || '').slice(0, 6000);
+      const d = analizarTicket(t.texto, hoy());
+      if (!tocado['#e-tienda'] && d.tienda) t.tienda = d.tienda;
+      if (d.fecha) t.fecha = d.fecha;
+      if (!tocado['#e-total'] && d.total != null) t.total = d.total;
+      if (!tocado['#e-num'] && d.num) t.num = d.num;
+      t.nif = d.nif; t.productos = d.productos;
+      if (!tocado['#e-concepto'] && d.productos.length && !d.esSuper) t.concepto = d.productos[0] + (d.productos.length > 1 ? ' y ' + (d.productos.length - 1) + ' más' : '');
+      if (d.esSuper && !tocado.gar) t.garOpc = 0;
+      if (capas.includes(c)) {
+        const tienda = v('#e-tienda').value, concepto = v('#e-concepto').value;
+        poner();
+        if (tocado['#e-tienda']) v('#e-tienda').value = tienda; if (tocado['#e-concepto']) v('#e-concepto').value = concepto;
+        const n = [d.tienda, d.fecha, d.total != null].filter(Boolean).length;
+        v('#e-estado').innerHTML = `<div class="leido">${ico(n ? 'escudo' : 'aviso')}${n === 3 ? 'Ticket leído. Revisa que todo esté bien.' : n ? 'He leído parte del ticket: completa lo que falte.' : 'No he podido leer el texto: rellénalo a mano.'}</div>`;
+      }
+    } catch (e) {
+      if (capas.includes(c)) v('#e-estado').innerHTML = `<div class="leido">${ico('aviso')}${e.message === 'clave' ? 'Contraseña incorrecta (revisa Ajustes)' : 'No se pudo leer ahora: rellena a mano, la foto se guarda igual'}</div>`;
+    } finally { leyendo = false; }
+  };
+  if (archivo) procesar(archivo);
+
+  c.addEventListener('click', async e => {
+    const x = e.target.closest('[data-x]'); if (!x) return;
+    if (x.dataset.x === 'cerrar') {
+      if (!viejo && (prep || v('#e-tienda').value) && !confirm('¿Salir sin guardar este ticket?')) return;
+      return cerrarCapa();
+    }
+    if (x.dataset.x === 'borrar') { if (confirm('¿Borrar este ticket y su foto?')) { borrarTicket(t.id); cerrarCapa(); cerrarCapa(); aviso('Ticket borrado'); } return; }
+    if (x.dataset.x === 'guardar') {
+      if (leyendo && !confirm('Todavía estoy leyendo el ticket. ¿Guardar ya?')) return;
+      t.tienda = v('#e-tienda').value.trim(); t.concepto = v('#e-concepto').value.trim(); t.num = v('#e-num').value.trim(); t.notas = v('#e-notas').value.trim();
+      t.fecha = v('#e-fecha').value || hoy();
+      const tot = v('#e-total').value.replace(/[^\d,.-]/g, ''); t.total = tot ? parseFloat(tot.includes(',') ? tot.replace(/\./g, '').replace(',', '.') : tot) : null;
+      if (isNaN(t.total)) t.total = null;
+      calcular();
+      if (!t.tienda && !t.concepto && !prep && !viejo) return aviso('Escribe al menos la tienda o qué compraste');
+      if (prep) await idb.set('img:' + t.id, { blob: prep.blob, mime: prep.mime }).catch(() => aviso('No se pudo guardar la foto en el dispositivo'));
+      t.t = Date.now();
+      const i = tickets.findIndex(x => x.id === t.id);
+      if (i >= 0) tickets[i] = t; else tickets.unshift(t);
+      pendientes.add(t.id); guardarLocal(); pintarInicio(); programarSync();
+      cerrarCapa();
+      if (viejo) { cerrarCapa(); setTimeout(() => abrirFicha(t.id), 40); }
+      aviso(viejo ? 'Cambios guardados' : 'Ticket guardado');
+    }
+  });
+}
+
+function borrarTicket(id) {
+  const i = tickets.findIndex(t => t.id === id); if (i < 0) return;
+  idb.del('img:' + id);
+  if (cfg.url) { tickets[i] = { id, t: Date.now(), borrado: true }; pendientes.add(id); }
+  else tickets.splice(i, 1);
+  guardarLocal(); pintarInicio(); programarSync();
+}
+
+/* ---------- Ficha ---------- */
+async function obtenerFoto(t) {
+  const r = await idb.get('img:' + t.id); if (r) return r;
+  if (!t.fotoId || !cfg.url) return null;
+  const j = await api('foto', { fotoId: t.fotoId });
+  const v = { blob: deB64(j.b64, j.mime), mime: j.mime };
+  idb.set('img:' + t.id, v).catch(() => {});
+  return v;
+}
+function abrirFicha(id) {
+  const t = tickets.find(x => x.id === id); if (!t || t.borrado) return;
+  const e = estado(t);
+  let url = null, foto = null;
+  const barra = (desde, hasta) => { const tot = Math.max(1, entre(desde, hasta)), pas = Math.min(tot, Math.max(0, entre(desde, hoy()))); return `<div class="barrita"><i style="width:${100 - pas / tot * 100}%"></i></div>`; };
+  const plazos = [];
+  if (t.devHasta) plazos.push(`<div class="plazo ${e.devAbierta && e.diasDev <= 7 ? 'alerta' : ''}"><div class="ico">${ico('volver')}</div><div style="flex:1">
+      <div class="pt">Devolución hasta el ${fCorta(t.devHasta)}</div><div class="ps">${e.devAbierta ? quedan(e.diasDev) : 'Plazo vencido'}</div>${e.devAbierta ? barra(t.fecha, t.devHasta) : ''}</div></div>`);
+  if (t.garHasta) plazos.push(`<div class="plazo ${e.garAbierta && e.diasGar <= 30 ? 'alerta' : ''}"><div class="ico">${ico('escudo')}</div><div style="flex:1">
+      <div class="pt">Garantía hasta el ${fCorta(t.garHasta)}</div><div class="ps">${e.garAbierta ? quedan(e.diasGar) : 'Garantía vencida'}</div>${e.garAbierta ? barra(t.fecha, t.garHasta) : ''}</div></div>`);
+  if (!plazos.length) plazos.push(`<div class="plazo"><div class="ico">${ico('reloj')}</div><div><div class="pt">Sin plazos</div><div class="ps">Se guarda hasta que lo borres</div></div></div>`);
+  const datos = [['Fecha', fCorta(t.fecha)], ['Importe', eur(t.total)], ['Nº ticket', t.num], ['NIF tienda', t.nif],
+    ['Productos', (t.productos || []).length > 1 ? t.productos.map(esc).join('<br>') : ''], ['Notas', esc(t.notas)]].filter(d => d[1]);
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3></h3>
+      <button class="acc" data-x="editar">Editar</button></div>
+    <div class="envoltura">
+      <div class="foto-grande" id="f-foto">${t.mini ? `<img src="${esc(t.mini)}" alt="" style="filter:blur(6px)">` : `<div class="ph">${ico(t.tipo === 'pdf' ? 'archivo' : 'ticket')}<br>${t.fotoId || t.mini ? 'Cargando…' : 'Sin foto'}</div>`}</div>
+      <div class="titulo-ficha"><div class="tn">${esc(t.tienda || 'Sin tienda')}</div>${t.concepto ? `<div class="sub">${esc(t.concepto)}</div>` : ''}</div>
+      ${e.papelera ? `<div class="aviso">${ico('papelera')}En la papelera: se borra en ${e.borraEn} ${e.borraEn === 1 ? 'día' : 'días'}</div>` : ''}
+      <div class="bloque">${plazos.join('')}</div>
+      <div class="bloque">${datos.map(d => `<div class="dato"><div class="k">${d[0]}</div><div class="v">${d[0] === 'Productos' || d[0] === 'Notas' ? d[1] : esc(d[1])}</div></div>`).join('')}</div>
+      <div class="botones">
+        <button class="btn col" data-x="compartir">${ico('compartir')}Enviar foto</button>
+        <button class="btn col" data-x="editar">${ico('lapiz')}Editar</button>
+        <button class="btn col peligro" data-x="borrar">${ico('papelera')}Borrar</button>
+      </div>
+      ${e.papelera ? `<button class="btn ancho pri" data-x="conservar">Conservar un año más</button>` : ''}
+      ${t.texto ? `<details class="texto"><summary>Ver texto leído del ticket</summary><pre></pre></details>` : ''}
+    </div>`, () => { if (url) URL.revokeObjectURL(url); });
+  c.querySelector('.top h3').textContent = t.tienda || 'Ticket';
+  if (t.texto) c.querySelector('pre').textContent = t.texto;
+  obtenerFoto(t).then(f => {
+    foto = f; const box = c.querySelector('#f-foto'); if (!f) { if (!t.mini) box.innerHTML = `<div class="ph">${ico('ticket')}<br>Sin foto · <b data-x="editar">Añadir</b></div>`; return; }
+    url = URL.createObjectURL(f.blob);
+    box.innerHTML = f.mime === 'application/pdf'
+      ? `<div class="ph">${ico('archivo')}<br><b>Factura en PDF</b><br><button class="btn" data-x="pdf" style="margin:10px auto 0">Abrir PDF</button></div>`
+      : `<img src="${url}" alt="Foto del ticket" data-x="ver"><button class="lupa" data-x="ver">${ico('ampliar')}Ampliar</button>`;
+  }).catch(() => { const box = c.querySelector('#f-foto'); box.insertAdjacentHTML('beforeend', '<button class="lupa" data-x="reintentar">Sin conexión · reintentar</button>'); });
+  c.addEventListener('click', async ev => {
+    const x = ev.target.closest('[data-x]'); if (!x) return;
+    const a = x.dataset.x;
+    if (a === 'cerrar') cerrarCapa();
+    else if (a === 'editar') editar(t.id, null);
+    else if (a === 'borrar') { if (confirm('¿Borrar este ticket y su foto?')) { borrarTicket(t.id); cerrarCapa(); aviso('Ticket borrado'); } }
+    else if (a === 'conservar') { t.garHasta = sumarAnios(hoy(), 1); t.garOpc = 'otra'; t.t = Date.now(); pendientes.add(t.id); guardarLocal(); pintarInicio(); programarSync(); cerrarCapa(); aviso('Se conserva hasta ' + fCorta(t.garHasta)); }
+    else if (a === 'ver' && url) {
+      const vz = document.createElement('div'); vz.className = 'visor';
+      vz.innerHTML = `<img src="${url}" alt="Ticket"><button class="cerrar" aria-label="Cerrar">${ico('cerrar')}</button>`;
+      vz.querySelector('img').addEventListener('dblclick', e2 => e2.target.classList.toggle('zoom'));
+      vz.querySelector('.cerrar').addEventListener('click', () => vz.remove());
+      document.body.appendChild(vz);
+    }
+    else if (a === 'pdf' && url) window.open(url, '_blank');
+    else if (a === 'reintentar') { cerrarCapa(); setTimeout(() => abrirFicha(t.id), 40); }
+    else if (a === 'compartir') {
+      if (!foto) return aviso('La foto aún no está disponible');
+      const nombre = ((t.tienda || 'ticket') + ' ' + (t.fecha || '')).trim().replace(/[^\w\- áéíóúñ]/gi, '') + (foto.mime === 'application/pdf' ? '.pdf' : '.jpg');
+      const file = new File([foto.blob], nombre, { type: foto.mime });
+      const txt = [t.tienda, t.concepto, t.fecha && 'Compra: ' + fCorta(t.fecha), t.total != null && 'Importe: ' + eur(t.total), t.num && 'Nº: ' + t.num].filter(Boolean).join('\n');
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text: txt });
+        else { const l = document.createElement('a'); l.href = url; l.download = nombre; l.click(); }
+      } catch (e) {}
+    }
+  });
+}
+
+/* ---------- Sincronización ---------- */
+let sincronizando = false, syncT = null, estadoSync = '';
+function punto() {
+  const p = $('#punto'); p.className = 'punto';
+  if (!cfg.url) p.title = 'Sin sincronizar';
+  else if (estadoSync === 'err') p.classList.add('err');
+  else if (pendientes.size || sincronizando) p.classList.add('pend');
+  else p.classList.add('ok');
+}
+function programarSync(ms = 1500) { punto(); clearTimeout(syncT); syncT = setTimeout(sincronizar, ms); }
+async function sincronizar() {
+  if (!cfg.url || !cfg.clave || sincronizando || !navigator.onLine) { punto(); return; }
+  if (localStorage.getItem('mt-clave-mala') === cfg.clave) { estadoSync = 'err'; punto(); return; }
+  sincronizando = true; punto();
+  try {
+    // 1. Fotos guardadas sin conexión
+    for (const t of tickets.filter(t => !t.borrado && !t.fotoId)) {
+      const f = await idb.get('img:' + t.id); if (!f) continue;
+      const j = await api('subir', { id: t.id, b64: await aB64(f.blob), mime: f.mime }, 120000);
+      t.fotoId = j.fotoId; t.t = Date.now(); pendientes.add(t.id); guardarLocal();
+    }
+    // 2. Datos
+    const envio = tickets.filter(t => pendientes.has(t.id));
+    const marcas = {}; envio.forEach(t => marcas[t.id] = t.t);
+    const j = await api('sync', { tickets: envio });
+    const local = {}; tickets.forEach(t => local[t.id] = t);
+    const nuevos = j.tickets.map(s => { const l = local[s.id]; return l && (l.t || 0) > (s.t || 0) ? l : s; });
+    const ids = new Set(nuevos.map(t => t.id));
+    tickets.forEach(t => { if (!ids.has(t.id) && pendientes.has(t.id)) nuevos.push(t); });
+    const antes = JSON.stringify(vivos().map(t => t.id + t.t));
+    nuevos.filter(t => t.borrado).forEach(t => { if (local[t.id] && !local[t.id].borrado) idb.del('img:' + t.id); });
+    tickets = nuevos;
+    envio.forEach(t => { const a = local[t.id]; if (!a || a.t === marcas[t.id]) pendientes.delete(t.id); });
+    estadoSync = 'ok'; guardarLocal(); purgarLocal();
+    if (antes !== JSON.stringify(vivos().map(t => t.id + t.t))) pintarInicio();
+  } catch (e) {
+    estadoSync = 'err';
+    if (e.message === 'clave') { try { localStorage.setItem('mt-clave-mala', cfg.clave); } catch (x) {} aviso('Contraseña incorrecta: revísala en Ajustes'); }
+    if (e.message === 'bloqueado') aviso('Demasiados intentos: espera 10 minutos');
+  } finally { sincronizando = false; punto(); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { purgarLocal(); pintarInicio(); sincronizar(); } });
+window.addEventListener('online', () => sincronizar());
+setInterval(() => { if (!document.hidden) sincronizar(); }, 60000);
+
+/* ---------- Ajustes ---------- */
+['#t-ajustes', '#b-ajustes-cab', '#punto'].forEach(s => $(s).addEventListener('click', abrirAjustes));
+$('#t-inicio').addEventListener('click', () => { while (capas.length) cerrarCapa(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+function abrirAjustes() {
+  if (capas.length) return;
+  $('#t-ajustes').classList.add('on'); $('#t-inicio').classList.remove('on');
+  const n = vivos().length, np = vivos().filter(t => estado(t).papelera).length;
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3>Ajustes</h3></div>
+    <div class="envoltura ajustes">
+      <h2 class="sec">Sincronización con Google</h2>
+      <div class="bloque">
+        <label class="campo"><span>Dirección del script</span><input id="a-url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="campo"><span>Contraseña</span><input id="a-clave" type="password" autocomplete="current-password"></label>
+        <div class="estado-sync" id="a-estado"></div>
+      </div>
+      <button class="btn ancho pri" data-x="probar">${ico('sync')}Guardar y sincronizar</button>
+      <p>Las fotos y los datos se guardan en tu Google Drive (carpeta «Mis Tickets») y se sincronizan entre el iPhone y el iPad. Los avisos llegan por Google Calendar: 3 días antes del último día de devolución y 3 semanas antes de que acabe la garantía.</p>
+      <h2 class="sec">Borrado automático</h2>
+      <div class="bloque"><div class="dato"><div class="k">Tickets</div><div class="v">${n} guardados${np ? ' · ' + np + ' en la papelera' : ''}</div></div>
+        <div class="dato"><div class="k">Cuándo</div><div class="v" style="font-weight:600">Cuando vencen la devolución y la garantía, el ticket pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con su foto, también de Drive.</div></div></div>
+      <p style="text-align:center;margin-top:22px">Mis Tickets ${VERSION}</p>
+    </div>`, () => { $('#t-ajustes').classList.remove('on'); $('#t-inicio').classList.add('on'); });
+  c.querySelector('#a-url').value = cfg.url; c.querySelector('#a-clave').value = cfg.clave;
+  const est = () => {
+    const e = c.querySelector('#a-estado');
+    e.innerHTML = !cfg.url ? `<span class="punto"></span>Sin configurar: los tickets solo están en este dispositivo`
+      : estadoSync === 'err' ? `<span class="punto err"></span>No se pudo sincronizar`
+        : pendientes.size ? `<span class="punto pend"></span>${pendientes.size} cambio(s) por subir` : `<span class="punto ok"></span>Todo sincronizado`;
+  };
+  est();
+  c.addEventListener('click', async ev => {
+    const x = ev.target.closest('[data-x]'); if (!x) return;
+    if (x.dataset.x === 'cerrar') return cerrarCapa();
+    if (x.dataset.x === 'probar') {
+      const url = c.querySelector('#a-url').value.trim(), clave = c.querySelector('#a-clave').value;
+      if (url && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)) return aviso('La dirección debe terminar en /exec');
+      const primera = !cfg.url && url;
+      cfg.url = url; cfg.clave = clave;
+      try { localStorage.setItem('mt-url', url); localStorage.setItem('mt-clave', clave); localStorage.removeItem('mt-clave-mala'); } catch (e) {}
+      if (!url) { est(); return aviso('Guardado sin sincronización'); }
+      if (primera) tickets.forEach(t => pendientes.add(t.id));
+      x.disabled = true; estadoSync = '';
+      try { await api('ping'); await sincronizar(); aviso(estadoSync === 'ok' ? 'Conectado y sincronizado' : 'Conectado, pero falló la sincronización'); }
+      catch (e) { estadoSync = 'err'; aviso(e.message === 'clave' ? 'Contraseña incorrecta' : e.message === 'bloqueado' ? 'Bloqueado 10 minutos por intentos fallidos' : 'No se pudo conectar con el script'); }
+      x.disabled = false; est(); punto();
+    }
+  });
+}
+
+/* ---------- Arranque ---------- */
+purgarLocal(); pintarInicio(); punto(); sincronizar();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+</script>
+</body>
+</html>
