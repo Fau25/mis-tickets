@@ -13,7 +13,7 @@
   const MESES = { ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, sep: 9, set: 9, oct: 10, nov: 11, dic: 12 };
 
   const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const RE_MONTO = /(?:^|[^\d,.])(-?\d{1,3}(?:\.\d{3})+,\d{2}|-?\d+[.,]\d{2})(?![\d%])/g;
+  const RE_MONTO = /(?:^|[^\d,.])(-?\d{1,3}(?:\.\d{3})+,\d{2}|-?\d+[.,]\d{2})(?![\d%]|[.\/]\d)/g;
 
   function montos(linea) {
     const out = []; let m; RE_MONTO.lastIndex = 0;
@@ -83,14 +83,27 @@
     });
     if (cand.length) r.total = Math.max(...cand);
     else {
-      const todos = lineas.filter(l => !/(%|iva|cambio|entregado)/i.test(l)).flatMap(montos).filter(n => n > 0 && n < 100000);
-      if (todos.length) r.total = Math.max(...todos);
+      const todos = lineas.filter(l => !/(%|iva|cambio|entregado|base|cuota)/i.test(l)).flatMap(montos).filter(n => n > 0 && n < 100000);
+      const veces = {}; todos.forEach(n => veces[n] = (veces[n] || 0) + 1);
+      const rep = Object.keys(veces).map(Number).filter(n => veces[n] >= 2).sort((a, b) => veces[b] - veces[a] || b - a);
+      if (rep.length) r.total = rep[0];
+      else if (todos.length) r.total = Math.max(...todos);
     }
 
     // Nº de ticket o factura
     const RES_N = [/(?:^|[^a-z])(?:factura(?:\s+simplificada)?|ticket|fra\.?)\s*(?:n[ºo°.]*)?\s*[:#]?\s*([A-Z0-9](?:[A-Z0-9\-\/]| (?=\d)){3,})/i,
       /(?:^|[^a-z])(?:n[ºo°]\.?\s*(?:de\s+)?(?:operaci[oó]n|documento|doc\.?)?|doc\.?)\s*[:#]?\s*([A-Z0-9](?:[A-Z0-9\-\/]| (?=\d)){3,})/i];
-    for (const re of RES_N) {
+    const RE_COD = /^(?:(FS|FT|FRA|FAC|FV|TK|T)\.?\s*)?[:#nº°]*\s*([A-Z0-9][A-Z0-9\-\/]{5,})$/i;
+    for (let i = 0; i < lineas.length && !r.num; i++) {
+      const l = lineas[i];
+      const m1 = l.match(/^(FS|FT|FRA|FAC)\.?\s*[:#]?\s*([A-Z0-9][A-Z0-9\-\/]{5,})$/i);
+      if (m1 && /\d/.test(m1[2])) r.num = (m1[1] + ' ' + m1[2]).toUpperCase();
+      else if (/factura(\s+simplificada)?\s*:?\s*$/i.test(l) && lineas[i + 1]) {
+        const m2 = lineas[i + 1].match(RE_COD);
+        if (m2 && /\d/.test(m2[2]) && !montos(lineas[i + 1]).length) r.num = ((m2[1] ? m2[1] + ' ' : '') + m2[2]).toUpperCase();
+      }
+    }
+    for (const re of r.num ? [] : RES_N) {
       for (const l of lineas) { const mn = l.match(re); if (mn && /\d/.test(mn[1])) { r.num = mn[1].trim().toUpperCase(); break; } }
       if (r.num) break;
     }
@@ -100,9 +113,19 @@
     if (mf) r.nif = mf[1] + mf[2] + mf[3];
 
     // Productos: líneas con importe que no son totales, pagos ni impuestos
-    const EXCL_P = /(total|iva|base|cambio|entregado|efectivo|tarjeta|visa|master|importe|pago|pagar|descuento|ahorr|redondeo|cuota|%|fecha|hora|tel[eé.f]|n\.?i\.?f|c\.?i\.?f|factura|ticket|bizum|devoluci)/i;
-    for (const l of lineas) {
+    const EXCL_P = /(total|iva|base|cambio|entregado|efectivo|tarj|visa|master|debit|cr[eé]dit|importe|pago|pagar|abonar|descuento|ahorr|redondeo|cuota|%|fecha|hora|tel[eé.f]|n\.?i\.?f|c\.?i\.?f|factura|ticket|bizum|devoluci|neto|mercanc|cheque|regalo|acumul|puntos|saldo|balance|vale|cup[oó]n|bancaria|autori|operaci)/i;
+    const soloTexto = l => !montos(l).length && (l.match(/[a-záéíóúñü]/gi) || []).length >= 3 && !EXCL_P.test(l) && !/^\W*$/.test(l);
+    for (const [i, l] of lineas.entries()) {
       if (!montos(l).length || EXCL_P.test(l)) continue;
+      const restoL = l.replace(RE_MONTO, ' ').replace(/€|eur\b|\b[a-d]\b/gi, ' ').replace(/\d+/g, ' ').trim();
+      if (/^\d{4,}\b/.test(l) && !/[a-záéíóúñü]{3}/i.test(restoL)) {           // «1488467  9,99 b» → nombre debajo (marca + descripción)
+        const sig = lineas.slice(i + 1, i + 3).filter(soloTexto);
+        if (sig.length && soloTexto(lineas[i + 1] || '')) {
+          let n = sig.join(' ').replace(/\s*\+\s*$/, '').replace(/\s+/g, ' ').trim();
+          if (n === n.toUpperCase()) n = n.charAt(0) + n.slice(1).toLowerCase();
+          r.productos.push(n); continue;
+        }
+      }
       let nombre = l.replace(/\d+([.,]\d+)?\s*kg\b/gi, ' ').replace(RE_MONTO, ' ').replace(/€?\s*\/\s*kg/gi, ' ').replace(/€|eur\b/gi, ' ')
         .replace(/^\s*\d+([.,]\d+)?\s*(x|uds?|kg)?\s+/i, '').replace(/\s+\d+([.,]\d+)?\s*(x|kg|uds?)?\s*$/i, '')
         .replace(/\s+/g, ' ').trim();
@@ -113,6 +136,12 @@
       }
       if (r.productos.length >= 12) break;
     }
+    // Plazos impresos en el ticket: «CAMBIOS Y DEVOLUCIONES: 60 DÍAS», «garantía 2 años»
+    const plano1 = norm(lineas.join(' '));
+    const md = plano1.match(/(?:devoluci[oó]n|devoluciones|cambios)[^\d]{0,40}?(\d{1,3})\s*d[ií]as/);
+    if (md && +md[1] >= 1 && +md[1] <= 365) r.devDias = +md[1];
+    const mg = plano1.match(/garant[ií]a[^\d]{0,30}?(\d{1,2})\s*a[nñ]os?/);
+    if (mg && +mg[1] >= 1 && +mg[1] <= 10) r.garAnios = +mg[1];
     return r;
   }
 

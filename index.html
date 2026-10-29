@@ -231,7 +231,7 @@ details.texto pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;
 <script src="analizar.js"></script>
 <script>
 'use strict';
-const VERSION = 'v2';
+const VERSION = 'v3';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -335,6 +335,9 @@ function aplicarLectura(t, d, libre) {
     const p = plazosDeTienda(t.tienda, t.id);
     if (p) { usarPlazos(t, p); t.plazosTienda = p.tienda; }
     else if (d.esSuper) t.garOpc = 0;
+    // Lo que pone el propio ticket manda sobre lo recordado
+    if (d.devDias) { t.devOpc = d.devDias; t.plazoLeido = 'devolución de ' + d.devDias + ' días'; }
+    if (d.garAnios) { t.garOpc = d.garAnios; t.plazoLeido = (t.plazoLeido ? t.plazoLeido + ' y ' : '') + 'garantía de ' + d.garAnios + (d.garAnios === 1 ? ' año' : ' años'); }
   }
   aplicarPlazos(t);
 }
@@ -482,9 +485,17 @@ function escanear(img) {
     if (v > mejor) { mejor = v; thr = i; }
   }
   const pap = new Uint8Array(N); for (let p = 0; p < N; p++) pap[p] = lum[p] > thr && sat[p] < 70 ? 1 : 0;
-  const tramo = (arr, lim) => { let a = -1, b = -1, ia = -1; for (let i = 0; i <= arr.length; i++) { if (i < arr.length && arr[i] > lim) { if (ia < 0) ia = i; } else if (ia >= 0) { if (i - ia > b - a) { a = ia; b = i; } ia = -1; } } return a < 0 ? null : [a, b - 1]; };
+  // Tramo más largo por encima del límite, aguantando huecos cortos (pliegues y sombras del papel)
+  const tramo = (arr, lim) => {
+    const hueco = Math.max(2, Math.round(arr.length * .05)); let a = -1, b = -1, ia = -1, ult = -1;
+    for (let i = 0; i <= arr.length; i++) {
+      if (i < arr.length && arr[i] > lim) { if (ia < 0) ia = i; ult = i; }
+      else if (ia >= 0 && (i === arr.length || i - ult > hueco)) { if (ult - ia > b - a) { a = ia; b = ult; } ia = -1; }
+    }
+    return a < 0 ? null : [a, b];
+  };
   const filas = new Float32Array(h); for (let y = 0; y < h; y++) { let s = 0; for (let x = 0; x < w; x++) s += pap[y * w + x]; filas[y] = s / w; }
-  const ry = tramo(filas, .25); if (!ry) return null;
+  const ry = tramo(filas, .2); if (!ry) return null;
   const cols = new Float32Array(w); for (let x = 0; x < w; x++) { let s = 0; for (let y = ry[0]; y <= ry[1]; y++) s += pap[y * w + x]; cols[x] = s / (ry[1] - ry[0] + 1); }
   const rx = tramo(cols, .35); if (!rx) return null;
   let dentro = 0; for (let y = ry[0]; y <= ry[1]; y++) for (let x = rx[0]; x <= rx[1]; x++) dentro += pap[y * w + x];
@@ -596,7 +607,7 @@ function editar(id, archivos) {
     </div>`, () => urls.forEach(u => URL.revokeObjectURL(u)));
   const v = s => c.querySelector(s);
   const pista = () => {
-    v('#e-pista').textContent = t.plazosTienda && !tocado.plazos ? `Plazos como en tu última compra en ${t.plazosTienda}. ` : '';
+    v('#e-pista').textContent = tocado.plazos ? '' : t.plazoLeido ? `El ticket indica ${t.plazoLeido}. ` : t.plazosTienda ? `Plazos como en tu última compra en ${t.plazosTienda}. ` : '';
     v('#e-pista').textContent += t.importante ? 'Este ticket no se borrará nunca: quedará guardado aunque venzan los plazos.'
       : `Garantía legal en España: 3 años (producto nuevo). Cuando venzan los dos plazos pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con sus fotos.`;
   };
@@ -616,10 +627,11 @@ function editar(id, archivos) {
   function pintarPlazos() {
     aplicarPlazos(t);
     [['dev', 'devOpc', 'devHasta', 'Devolver hasta el'], ['gar', 'garOpc', 'garHasta', 'Garantía hasta el']].forEach(([k, o, h, txt]) => {
-      v('#o-' + k).querySelectorAll('button').forEach(b => b.classList.toggle('on', String(t[o]) === b.dataset.v));
-      const el = v('#h-' + k);
+      const bs = [...v('#o-' + k).querySelectorAll('button')], fuera = t[o] !== 'otra' && +t[o] > 0 && !bs.some(b => b.dataset.v === String(t[o]));
+      bs.forEach(b => b.classList.toggle('on', String(t[o]) === b.dataset.v || (fuera && b.dataset.v === 'otra')));
+      const el = v('#h-' + k), pre = fuera ? t[o] + (k === 'dev' ? ' días' : +t[o] === 1 ? ' año' : ' años') + ' · ' : '';
       if (t[o] === 'otra') el.innerHTML = `${txt} <input type="date" data-h="${h}" value="${t[h] || ''}">`;
-      else if (t[h]) { const d = entre(hoy(), t[h]); el.textContent = txt + ' ' + fCorta(t[h]) + (d < 0 ? ' · ya vencido' : ''); }
+      else if (t[h]) { const d = entre(hoy(), t[h]); el.textContent = pre + txt + ' ' + fCorta(t[h]) + (d < 0 ? ' · ya vencido' : ''); }
       else el.textContent = k === 'dev' ? 'Sin devolución' : 'Sin garantía';
     });
     pista();
@@ -627,6 +639,7 @@ function editar(id, archivos) {
   ['dev', 'gar'].forEach(k => v('#o-' + k).addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     const o = k + 'Opc', h = k + 'Hasta';
+    if (b.dataset.v === 'otra' && t[o] !== 'otra') aplicarPlazos(t);   // parte de la fecha que ya había
     t[o] = b.dataset.v === 'otra' ? 'otra' : +b.dataset.v;
     if (t[o] === 'otra' && !t[h]) t[h] = k === 'dev' ? sumarDias(t.fecha || hoy(), 30) : sumarAnios(t.fecha || hoy(), 2);
     tocado.plazos = true; pintarPlazos();
@@ -719,7 +732,7 @@ function editar(id, archivos) {
       leerCampos();
       if (!t.tienda && !t.concepto && !t.fotos.length && !viejo) return aviso('Escribe al menos la tienda o qué compraste');
       if (tocado.fecha) t.fechaManual = true;
-      if (tocado.plazos) { t.plazosManual = true; delete t.plazosTienda; }
+      if (tocado.plazos) { t.plazosManual = true; delete t.plazosTienda; delete t.plazoLeido; }
       aplicarPlazos(t);
       for (const f of t.fotos) if (mem[f.k]) await idb.set(claveImg(t, f), { blob: mem[f.k].blob, mime: f.mime }).catch(() => aviso('No se pudo guardar la foto en el dispositivo'));
       if (viejo) (viejo.fotos || []).forEach(f => { if (!t.fotos.some(g => g.k === f.k)) idb.del(claveImg(viejo, f)); });
