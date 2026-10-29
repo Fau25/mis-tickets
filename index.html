@@ -150,6 +150,26 @@ details.texto pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;
 @keyframes gira{to{transform:rotate(360deg)}}
 .leido{display:flex;gap:8px;align-items:center;background:var(--soft);border-radius:12px;padding:10px 12px;margin-top:12px;font-size:14px;font-weight:700;color:var(--ink)}
 
+.fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fotos.peque{grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px}
+.ft{position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--soft);display:grid;place-items:center;color:var(--sec);border:0;padding:0}
+.ft img{width:100%;height:100%;object-fit:cover;display:block}
+.ft .pdf{display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:800}
+.ft .x{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(18,23,30,.66);color:#fff;display:grid;place-items:center;border:0}
+.ft .x svg.i{width:16px;height:16px;stroke-width:2.2}
+.ft .modo{position:absolute;left:5px;right:5px;bottom:5px;font-size:11px;font-weight:800;background:rgba(18,23,30,.7);color:#fff;border-radius:999px;padding:5px 4px;border:0;line-height:1.15}
+.ft.add{background:transparent;border:2px dashed var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-weight:800;font-size:13.5px;color:var(--ink);cursor:pointer}
+.ft.add svg.i{width:26px;height:26px}
+.fotos.peque .ft{border-radius:8px}
+.fotos.peque .ft.sel{outline:2.5px solid var(--ink);outline-offset:1px}
+.mini{position:relative}
+.mini .num{position:absolute;right:3px;bottom:3px;background:var(--ink);color:var(--bg);font-size:11px;font-weight:800;border-radius:999px;padding:1px 6px}
+.interruptor{display:flex!important;align-items:center;gap:12px}
+.interruptor div{flex:1}.interruptor b{display:block;font-size:16px;color:var(--txt)}
+.interruptor small{display:block;color:var(--sec);font-size:13px;font-weight:600;margin-top:2px}
+.interruptor input{appearance:none;-webkit-appearance:none;width:51px!important;height:31px;border-radius:99px;background:var(--soft);position:relative;flex:none;transition:background .2s;padding:0!important;cursor:pointer}
+.interruptor input::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .2s}
+.interruptor input:checked{background:var(--ink)}.interruptor input:checked::after{transform:translateX(20px)}
 /* Visor */
 .visor{position:fixed;inset:0;z-index:30;background:#0b0f14;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom}
 .visor img{display:block;width:100%;height:auto;min-height:100%;object-fit:contain;transition:width .2s}
@@ -182,6 +202,7 @@ details.texto pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;
   <symbol id="i-papelera" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/></symbol>
   <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.2"/></symbol>
   <symbol id="i-ampliar" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
+  <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.5L4 8.5M4 13a8 8 0 0 0 14.3 4.5L20 15.5"/><path d="M4 4v4.5h4.5M20 20v-4.5h-4.5"/></symbol>
 </svg>
 
@@ -205,17 +226,20 @@ details.texto pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;
 </div></nav>
 
 <input type="file" id="f-camara" accept="image/*" capture="environment" class="oculto">
-<input type="file" id="f-archivo" accept="image/*,application/pdf" class="oculto">
+<input type="file" id="f-archivo" accept="image/*,application/pdf" multiple class="oculto">
 
 <script src="analizar.js"></script>
 <script>
 'use strict';
-const VERSION = 'v1';
+const VERSION = 'v2';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const eur = n => n == null || isNaN(n) ? '' : new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
-const DIAS_PAPELERA = 30;
+const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const DIAS_PAPELERA = 30, MAX_FOTOS = 6;
+const nuevoK = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+const esPdf = f => f && f.mime === 'application/pdf';
 
 /* ---------- Fechas ---------- */
 const isoLocal = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -262,8 +286,61 @@ const idb = (() => {
   };
 })();
 
+// v1 → v2: de una foto (fotoId/tipo/mini) a una lista de fotos
+function migrar(t) {
+  if (t.borrado || Array.isArray(t.fotos)) return t;
+  t.fotos = (t.fotoId || t.mini || t.tipo) ? [{ k: '0', fotoId: t.fotoId || null, mime: t.tipo === 'pdf' ? 'application/pdf' : 'image/jpeg', mini: t.mini || '' }] : [];
+  delete t.fotoId; delete t.tipo; return t;
+}
+tickets.forEach(migrar);
+const claveImg = (t, f) => 'img:' + t.id + ':' + f.k;
+async function fotoLocal(t, f) { return (await idb.get(claveImg(t, f))) || (f.k === '0' ? await idb.get('img:' + t.id) : null); }
+function borrarLocales(t) { (t.fotos || []).forEach(f => idb.del(claveImg(t, f))); idb.del('img:' + t.id); }
+
+/* ---------- Plazos ---------- */
+function aplicarPlazos(t) {
+  const f = t.fecha || hoy();
+  if (t.devOpc !== 'otra') t.devHasta = t.devOpc ? sumarDias(f, +t.devOpc) : null;
+  if (t.garOpc !== 'otra') t.garHasta = t.garOpc ? sumarAnios(f, +t.garOpc) : null;
+}
+// Plazos de la última compra en la misma tienda
+function plazosDeTienda(nombre, excepto) {
+  const n = norm(nombre); if (!n) return null;
+  const p = vivos().filter(x => x.id !== excepto && norm(x.tienda) === n && x.devOpc !== undefined)
+    .sort((a, b) => (b.creado || 0) - (a.creado || 0))[0];
+  if (!p) return null;
+  return {
+    tienda: p.tienda, devOpc: p.devOpc, garOpc: p.garOpc,
+    devDias: p.devOpc === 'otra' && p.devHasta ? entre(p.fecha, p.devHasta) : null,
+    garDias: p.garOpc === 'otra' && p.garHasta ? entre(p.fecha, p.garHasta) : null
+  };
+}
+function usarPlazos(t, p) {
+  const f = t.fecha || hoy();
+  t.devOpc = p.devOpc; t.garOpc = p.garOpc;
+  if (p.devOpc === 'otra') t.devHasta = p.devDias != null ? sumarDias(f, p.devDias) : null;
+  if (p.garOpc === 'otra') t.garHasta = p.garDias != null ? sumarDias(f, p.garDias) : null;
+  aplicarPlazos(t);
+}
+// Vuelca lo leído del ticket en los campos que se pueden rellenar (libre(campo) = true)
+function aplicarLectura(t, d, libre) {
+  if (d.tienda && libre('tienda')) t.tienda = d.tienda;
+  if (d.fecha && libre('fecha')) { t.fecha = d.fecha; t.fechaLeida = true; }
+  if (d.total != null && libre('total')) t.total = d.total;
+  if (d.num && libre('num')) t.num = d.num;
+  if (d.nif && !t.nif) t.nif = d.nif;
+  if (d.productos.length && !(t.productos || []).length) t.productos = d.productos;
+  if (d.productos.length && !d.esSuper && libre('concepto')) t.concepto = d.productos[0] + (d.productos.length > 1 ? ' y ' + (d.productos.length - 1) + ' más' : '');
+  if (libre('plazos')) {
+    const p = plazosDeTienda(t.tienda, t.id);
+    if (p) { usarPlazos(t, p); t.plazosTienda = p.tienda; }
+    else if (d.esSuper) t.garOpc = 0;
+  }
+  aplicarPlazos(t);
+}
+
 /* ---------- Estado de cada ticket ---------- */
-function finDe(t) { const f = [t.devHasta, t.garHasta].filter(Boolean).sort(); return f.length ? f[f.length - 1] : null; }
+function finDe(t) { if (t.importante) return null; const f = [t.devHasta, t.garHasta].filter(Boolean).sort(); return f.length ? f[f.length - 1] : null; }
 function estado(t) {
   const h = hoy(), fin = finDe(t);
   const e = { fin, papelera: !!(fin && fin < h), devAbierta: !!(t.devHasta && t.devHasta >= h), garAbierta: !!(t.garHasta && t.garHasta >= h) };
@@ -281,7 +358,7 @@ function purgarLocal() {
   tickets = tickets.filter(t => {
     if (t.borrado) return true;
     const f = finDe(t);
-    if (f && sumarDias(f, DIAS_PAPELERA) < h) { idb.del('img:' + t.id); cambio = true; t.borrado = true; return !!cfg.url; }
+    if (f && sumarDias(f, DIAS_PAPELERA) < h) { borrarLocales(t); cambio = true; t.borrado = true; return !!cfg.url; }
     return true;
   }).map(t => t.borrado ? { id: t.id, t: t.t, borrado: true } : t);
   if (cambio) guardarLocal();
@@ -294,14 +371,15 @@ function chipDe(t, e) {
   const c = [];
   if (e.devAbierta) c.push(`<span class="chip ${e.diasDev <= 7 ? 'alerta' : ''}">${ico('volver')}Devolución: ${e.diasDev === 0 ? 'último día' : e.diasDev + (e.diasDev === 1 ? ' día' : ' días')}</span>`);
   if (e.garAbierta) c.push(`<span class="chip ${e.diasGar <= 30 ? 'alerta' : ''}">${ico('escudo')}Garantía hasta ${fMes(t.garHasta)}</span>`);
-  if (!e.fin) c.push(`<span class="chip">Sin plazos</span>`);
+  if (t.importante) c.push(`<span class="chip">${ico('candado')}No se borra</span>`);
+  else if (!e.fin) c.push(`<span class="chip">Sin plazos</span>`);
   return c.join('');
 }
 function fila(t) {
-  const e = estado(t);
-  const mini = t.mini ? `<img src="${esc(t.mini)}" alt="">` : ico(t.tipo === 'pdf' ? 'archivo' : 'ticket');
+  const e = estado(t), f0 = (t.fotos || [])[0], n = (t.fotos || []).length;
+  const mini = f0 && f0.mini ? `<img src="${esc(f0.mini)}" alt="">` : ico(esPdf(f0) ? 'archivo' : 'ticket');
   return `<button class="ticket" data-id="${esc(t.id)}">
-    <div class="mini">${mini}</div>
+    <div class="mini">${mini}${n > 1 ? `<span class="num">${n}</span>` : ''}</div>
     <div class="cuerpo">
       <div class="t1"><span class="tienda">${esc(t.tienda || 'Sin tienda')}</span><span class="importe">${eur(t.total)}</span></div>
       ${t.concepto ? `<div class="concepto">${esc(t.concepto)}</div>` : ''}
@@ -310,9 +388,8 @@ function fila(t) {
 }
 function coincide(t) {
   if (!texto) return true;
-  const n = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const q = n(texto);
-  return [t.tienda, t.concepto, t.num, t.notas, (t.productos || []).join(' '), t.texto].some(x => n(x).includes(q));
+  const q = norm(texto);
+  return [t.tienda, t.concepto, t.num, t.notas, (t.productos || []).join(' '), t.texto].some(x => norm(x).includes(q));
 }
 function pintarInicio() {
   const lista = vivos().filter(coincide).map(t => ({ t, e: estado(t) }));
@@ -320,14 +397,14 @@ function pintarInicio() {
   let html = '';
   if (filtro === 'papelera') {
     const p = lista.filter(x => x.e.papelera).sort((a, b) => a.e.borraEn - b.e.borraEn);
-    html += `<p class="nota-form" style="padding-top:16px">Aquí están los tickets con todos los plazos vencidos. Se borran solos (con su foto) a los ${DIAS_PAPELERA} días.</p>`;
+    html += `<p class="nota-form" style="padding-top:16px">Aquí están los tickets con todos los plazos vencidos. Se borran solos (con sus fotos) a los ${DIAS_PAPELERA} días.</p>`;
     html += p.length ? `<div class="lista" style="margin-top:8px">${p.map(x => fila(x.t)).join('')}</div>` : vacio('papelera', 'La papelera está vacía', 'Cuando venzan los plazos de un ticket aparecerá aquí.');
   } else {
     let l = lista.filter(x => !x.e.papelera);
     if (filtro === 'dev') l = l.filter(x => x.e.devAbierta).sort((a, b) => a.e.diasDev - b.e.diasDev);
     else if (filtro === 'gar') l = l.filter(x => x.e.garAbierta).sort((a, b) => a.e.diasGar - b.e.diasGar);
     else l.sort(orden);
-    const nPronto = vivos().filter(t => estado(t).pronto && !estado(t).papelera).length;
+    const nPronto = vivos().filter(t => { const e = estado(t); return e.pronto && !e.papelera; }).length;
     if (nPronto && !texto) html += `<div class="aviso">${ico('aviso')}${nPronto === 1 ? '1 ticket vence pronto' : nPronto + ' tickets vencen pronto'}</div>`;
     if (!l.length) html += texto ? vacio('lupa', 'Nada por aquí', 'No hay tickets que coincidan con la búsqueda.')
       : vivos().length ? vacio('ticket', 'Ninguno en esta vista', '') : vacio('ticket', 'Aún no hay tickets', 'Pulsa + para hacer una foto a tu primer ticket o factura.');
@@ -375,11 +452,68 @@ function cargarImagen(blob) {
     img.src = u;
   });
 }
-function reducir(img, max, calidad) {
-  const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-  const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
-  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
-  return { canvas: c, url: () => c.toDataURL('image/jpeg', calidad), blob: () => new Promise(ok => c.toBlob(ok, 'image/jpeg', calidad)) };
+// Dibuja (un trozo de) la imagen en un lienzo de lado máximo `max`
+function lienzo(img, max, sx = 0, sy = 0, sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height) {
+  const k = Math.min(1, max / Math.max(sw, sh));
+  const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(sw * k)); c.height = Math.max(1, Math.round(sh * k));
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+const aBlob = (c, q = .82) => new Promise(ok => c.toBlob(ok, 'image/jpeg', q));
+const aMini = c => lienzo(c, 240).toDataURL('image/jpeg', .62);
+
+// Modo escáner: busca el papel, recorta a su borde y deja el fondo blanco y el texto oscuro.
+// Devuelve null si la foto no parece un ticket (p. ej. la foto de un producto).
+function escanear(img) {
+  const W0 = img.naturalWidth, H0 = img.naturalHeight;
+  const ch = lienzo(img, 360), w = ch.width, h = ch.height;
+  const d = ch.getContext('2d').getImageData(0, 0, w, h).data;
+  const lum = new Float32Array(w * h), sat = new Uint8Array(w * h), hist = new Array(256).fill(0);
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    const r = d[i], g = d[i + 1], b = d[i + 2], l = .299 * r + .587 * g + .114 * b;
+    lum[p] = l; sat[p] = Math.max(r, g, b) - Math.min(r, g, b); hist[l | 0]++;
+  }
+  // Umbral de Otsu entre papel y fondo
+  const N = w * h; let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sB = 0, wB = 0, mejor = 0, thr = 128;
+  for (let i = 0; i < 256; i++) {
+    wB += hist[i]; if (!wB) continue; const wF = N - wB; if (!wF) break;
+    sB += i * hist[i]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF);
+    if (v > mejor) { mejor = v; thr = i; }
+  }
+  const pap = new Uint8Array(N); for (let p = 0; p < N; p++) pap[p] = lum[p] > thr && sat[p] < 70 ? 1 : 0;
+  const tramo = (arr, lim) => { let a = -1, b = -1, ia = -1; for (let i = 0; i <= arr.length; i++) { if (i < arr.length && arr[i] > lim) { if (ia < 0) ia = i; } else if (ia >= 0) { if (i - ia > b - a) { a = ia; b = i; } ia = -1; } } return a < 0 ? null : [a, b - 1]; };
+  const filas = new Float32Array(h); for (let y = 0; y < h; y++) { let s = 0; for (let x = 0; x < w; x++) s += pap[y * w + x]; filas[y] = s / w; }
+  const ry = tramo(filas, .25); if (!ry) return null;
+  const cols = new Float32Array(w); for (let x = 0; x < w; x++) { let s = 0; for (let y = ry[0]; y <= ry[1]; y++) s += pap[y * w + x]; cols[x] = s / (ry[1] - ry[0] + 1); }
+  const rx = tramo(cols, .35); if (!rx) return null;
+  let dentro = 0; for (let y = ry[0]; y <= ry[1]; y++) for (let x = rx[0]; x <= rx[1]; x++) dentro += pap[y * w + x];
+  const area = (rx[1] - rx[0] + 1) * (ry[1] - ry[0] + 1);
+  if (area / N < .1 || dentro / area < .55) return null;
+  const k = W0 / w, mx = Math.round(W0 * .004), my = Math.round(H0 * .004);
+  const sx = Math.max(0, rx[0] * k - mx), sy = Math.max(0, ry[0] * k - my);
+  const c = lienzo(img, 2000, sx, sy, Math.min(W0, (rx[1] + 1) * k + mx) - sx, Math.min(H0, (ry[1] + 1) * k + my) - sy);
+  // Niveles: negro = percentil 2, blanco = percentil 60 (el papel)
+  const x = c.getContext('2d'), im = x.getImageData(0, 0, c.width, c.height), px = im.data, hh = new Array(256).fill(0);
+  let n = 0; for (let i = 0; i < px.length; i += 16) { hh[(.299 * px[i] + .587 * px[i + 1] + .114 * px[i + 2]) | 0]++; n++; }
+  const pct = q => { let a = 0; for (let i = 0; i < 256; i++) { a += hh[i]; if (a >= q * n) return i; } return 255; };
+  const negro = pct(.02), blanco = pct(.6);
+  if (blanco - negro < 40) return null;
+  for (let i = 0; i < px.length; i += 4) {
+    let v = ((.299 * px[i] + .587 * px[i + 1] + .114 * px[i + 2]) - negro) / (blanco - negro);
+    v = v <= 0 ? 0 : v >= 1 ? 255 : Math.pow(v, 1.6) * 255;
+    px[i] = px[i + 1] = px[i + 2] = v;
+  }
+  x.putImageData(im, 0, 0);
+  return c;
+}
+async function prepararArchivo(f) {
+  if (f.type === 'application/pdf') return { mime: 'application/pdf', blob: f, mini: '' };
+  const img = await cargarImagen(f), orig = lienzo(img, 2000);
+  let scan = null; try { scan = escanear(img); } catch (e) { scan = null; }
+  const o = { mime: 'image/jpeg', blob: await aBlob(orig), mini: aMini(orig) };
+  if (!scan) return o;
+  return { mime: 'image/jpeg', blob: await aBlob(scan, .8), mini: aMini(scan), alt: o, modo: 'scan' };
 }
 const aB64 = blob => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.readAsDataURL(blob); });
 const deB64 = (b64, mime) => { const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: mime }); };
@@ -403,45 +537,38 @@ function nuevoTicket() {
     <div class="envoltura">
       <div class="elegir">
         <label for="f-camara">${ico('camara')}Hacer foto<small>al ticket</small></label>
-        <label for="f-archivo">${ico('archivo')}Elegir archivo<small>foto o factura PDF</small></label>
+        <label for="f-archivo">${ico('archivo')}Elegir archivos<small>fotos o factura PDF</small></label>
       </div>
-      <p class="nota-form">Leo el texto del ticket y relleno tienda, fecha, importe y plazos. Tú solo revisas y guardas.${cfg.url ? '' : ' <b>Para leer los tickets solos, configura la conexión en Ajustes.</b>'}</p>
+      <p class="nota-form">Pon el ticket sobre una superficie oscura: lo recorto y lo dejo como escaneado. Después leo el texto y relleno tienda, fecha, importe y plazos.${cfg.url ? '' : ' <b>Para leer los tickets solos, configura la conexión en Ajustes.</b>'}</p>
       <button class="btn ancho" data-x="manual">Escribir sin foto</button>
     </div>`);
   c.addEventListener('click', e => {
     const x = e.target.closest('[data-x]'); if (!x) return;
     if (x.dataset.x === 'cerrar') cerrarCapa();
-    if (x.dataset.x === 'manual') { cerrarCapa(); setTimeout(() => editar(null, null), 50); }
+    if (x.dataset.x === 'manual') { cerrarCapa(); setTimeout(() => editar(null, []), 50); }
   });
 }
-['#f-camara', '#f-archivo'].forEach(s => $(s).addEventListener('change', async e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  if (f.size > 15 * 1024 * 1024) return aviso('El archivo es muy grande (máx. 15 MB)');
+['#f-camara', '#f-archivo'].forEach(s => $(s).addEventListener('change', e => {
+  const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
   while (capas.length) cerrarCapa();
-  setTimeout(() => editar(null, f), 60);
+  setTimeout(() => editar(null, fs), 60);
 }));
 
-async function prepararArchivo(f) {
-  if (f.type === 'application/pdf') return { tipo: 'pdf', blob: f, mime: 'application/pdf', mini: '' };
-  const img = await cargarImagen(f);
-  const g = reducir(img, 2000, .82), m = reducir(img, 180, .6);
-  return { tipo: 'img', blob: await g.blob(), mime: 'image/jpeg', mini: m.url() };
-}
-
-function editar(id, archivo) {
+function editar(id, archivos) {
   const viejo = id ? tickets.find(t => t.id === id) : null;
-  const t = viejo ? JSON.parse(JSON.stringify(viejo)) : {
+  const t = viejo ? migrar(JSON.parse(JSON.stringify(viejo))) : {
     id: 'tk' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), creado: Date.now(),
     tienda: '', concepto: '', fecha: hoy(), total: null, num: '', nif: '', notas: '', productos: [], texto: '',
-    devOpc: 30, garOpc: 3, devHasta: null, garHasta: null
+    devOpc: 30, garOpc: 3, devHasta: null, garHasta: null, fotos: [], importante: false
   };
-  let prep = null, leyendo = false, tocado = {};
-  const sinFoto = `${ico('ticket')}<br><label for="e-file" class="btn" style="margin:10px auto 0;display:inline-flex">${ico('camara')}Añadir foto</label>`;
+  const mem = {}, urls = [];          // mem[k] = foto nueva aún sin guardar {blob, mime, mini, alt, modo}
+  let leyendo = 0, tocado = {};
+  const enLectura = new Set();
   const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Cerrar">${ico('cerrar')}</button>
       <h3>${viejo ? 'Editar ticket' : 'Revisar ticket'}</h3><button class="acc" data-x="guardar">Guardar</button></div>
     <div class="envoltura">
-      <div class="foto-grande" id="e-foto">${archivo ? '<div class="ph"><div class="rueda" style="margin:0 auto 8px"></div>Preparando…</div>' : viejo && viejo.mini ? `<img src="${esc(viejo.mini)}" alt="">` : `<div class="ph">${viejo && viejo.fotoId ? ico('archivo') + '<br>Archivo guardado' : sinFoto}</div>`}</div>
-      <input type="file" id="e-file" accept="image/*,application/pdf" class="oculto">
+      <div class="fotos" id="e-fotos"></div>
+      <input type="file" id="e-file" accept="image/*,application/pdf" multiple class="oculto">
       <div id="e-estado"></div>
       <div class="bloque">
         <label class="campo"><span>Tienda</span><input id="e-tienda" autocomplete="off"></label>
@@ -460,25 +587,34 @@ function editar(id, archivo) {
         <div class="campo"><span>Garantía</span>
           <div class="opciones" id="o-gar"><button data-v="0">No</button><button data-v="1">1 año</button><button data-v="3">3 años</button><button data-v="otra">Otra</button></div>
           <div class="hasta" id="h-gar"></div></div>
+        <label class="campo interruptor"><div><b>No borrar nunca</b><small>Para el seguro del hogar, Hacienda o cosas que quizá vendas</small></div>
+          <input type="checkbox" id="e-imp" role="switch"></label>
       </div>
-      <p class="nota-form">En España la garantía legal de un producto nuevo es de 3 años. La devolución depende de la tienda (en compras por internet, mínimo 14 días). Cuando venzan los dos plazos el ticket pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con su foto.</p>
+      <p class="nota-form" id="e-pista"></p>
       <div class="bloque" style="margin-top:14px"><label class="campo"><span>Notas</span><textarea id="e-notas" rows="2" placeholder="Nº de serie, dónde está la caja…"></textarea></label></div>
       ${viejo ? `<button class="btn ancho peligro" data-x="borrar">${ico('papelera')}Borrar ticket</button>` : ''}
-    </div>`, () => { if (fotoUrl) URL.revokeObjectURL(fotoUrl); });
-  let fotoUrl = null;
+    </div>`, () => urls.forEach(u => URL.revokeObjectURL(u)));
   const v = s => c.querySelector(s);
+  const pista = () => {
+    v('#e-pista').textContent = t.plazosTienda && !tocado.plazos ? `Plazos como en tu última compra en ${t.plazosTienda}. ` : '';
+    v('#e-pista').textContent += t.importante ? 'Este ticket no se borrará nunca: quedará guardado aunque venzan los plazos.'
+      : `Garantía legal en España: 3 años (producto nuevo). Cuando venzan los dos plazos pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con sus fotos.`;
+  };
   const poner = () => {
     v('#e-tienda').value = t.tienda || ''; v('#e-concepto').value = t.concepto || ''; v('#e-fecha').value = t.fecha || '';
-    v('#e-total').value = t.total != null ? String(t.total.toFixed(2)).replace('.', ',') : ''; v('#e-num').value = t.num || ''; v('#e-notas').value = t.notas || '';
+    v('#e-total').value = t.total != null ? t.total.toFixed(2).replace('.', ',') : ''; v('#e-num').value = t.num || '';
+    v('#e-notas').value = t.notas || ''; v('#e-imp').checked = !!t.importante;
     pintarPlazos();
   };
-  function calcular() {
-    const f = t.fecha || hoy();
-    if (t.devOpc !== 'otra') t.devHasta = t.devOpc ? sumarDias(f, +t.devOpc) : null;
-    if (t.garOpc !== 'otra') t.garHasta = t.garOpc ? sumarAnios(f, +t.garOpc) : null;
-  }
+  const leerCampos = () => {
+    t.tienda = v('#e-tienda').value.trim(); t.concepto = v('#e-concepto').value.trim(); t.num = v('#e-num').value.trim(); t.notas = v('#e-notas').value.trim();
+    t.fecha = v('#e-fecha').value || hoy(); t.importante = v('#e-imp').checked;
+    const tot = v('#e-total').value.replace(/[^\d,.-]/g, '');
+    t.total = tot ? parseFloat(tot.includes(',') ? tot.replace(/\./g, '').replace(',', '.') : tot) : null;
+    if (isNaN(t.total)) t.total = null;
+  };
   function pintarPlazos() {
-    calcular();
+    aplicarPlazos(t);
     [['dev', 'devOpc', 'devHasta', 'Devolver hasta el'], ['gar', 'garOpc', 'garHasta', 'Garantía hasta el']].forEach(([k, o, h, txt]) => {
       v('#o-' + k).querySelectorAll('button').forEach(b => b.classList.toggle('on', String(t[o]) === b.dataset.v));
       const el = v('#h-' + k);
@@ -486,80 +622,110 @@ function editar(id, archivo) {
       else if (t[h]) { const d = entre(hoy(), t[h]); el.textContent = txt + ' ' + fCorta(t[h]) + (d < 0 ? ' · ya vencido' : ''); }
       else el.textContent = k === 'dev' ? 'Sin devolución' : 'Sin garantía';
     });
+    pista();
   }
   ['dev', 'gar'].forEach(k => v('#o-' + k).addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     const o = k + 'Opc', h = k + 'Hasta';
     t[o] = b.dataset.v === 'otra' ? 'otra' : +b.dataset.v;
     if (t[o] === 'otra' && !t[h]) t[h] = k === 'dev' ? sumarDias(t.fecha || hoy(), 30) : sumarAnios(t.fecha || hoy(), 2);
-    tocado[k] = true; pintarPlazos();
+    tocado.plazos = true; pintarPlazos();
   }));
   c.addEventListener('change', e => {
     if (e.target.dataset.h) t[e.target.dataset.h] = e.target.value || null;
-    if (e.target.id === 'e-fecha') { t.fecha = e.target.value || hoy(); pintarPlazos(); }
+    if (e.target.id === 'e-fecha') { tocado.fecha = true; t.fecha = e.target.value || hoy(); pintarPlazos(); }
+    if (e.target.id === 'e-imp') { t.importante = e.target.checked; pista(); }
+    if (e.target.id === 'e-tienda' && !tocado.plazos && !viejo) {   // plazos recordados de esa tienda
+      const p = plazosDeTienda(e.target.value, t.id);
+      if (p) { usarPlazos(t, p); t.plazosTienda = p.tienda; pintarPlazos(); }
+    }
   });
-  ['#e-tienda', '#e-concepto', '#e-total', '#e-num'].forEach(s => v(s).addEventListener('input', () => tocado[s] = true));
+  ['tienda', 'concepto', 'total', 'num'].forEach(k => v('#e-' + k).addEventListener('input', () => tocado[k] = true));
 
-  async function mostrarFoto(blob, tipo) {
-    const box = v('#e-foto');
-    if (tipo === 'pdf') { box.innerHTML = `<div class="ph">${ico('archivo')}<br>Factura en PDF</div>`; return; }
-    fotoUrl = URL.createObjectURL(blob); box.innerHTML = `<img src="${fotoUrl}" alt="Foto del ticket">`;
+  // Fotos
+  function pintarFotos() {
+    const tiles = t.fotos.map(f => {
+      const m = mem[f.k];
+      if (m && m.cargando) return `<div class="ft"><div class="rueda"></div></div>`;
+      const src = f.mini ? `<img src="${esc(f.mini)}" alt="">` : `<div class="pdf">${ico(esPdf(f) ? 'archivo' : 'ticket')}<small>${esPdf(f) ? 'PDF' : ''}</small></div>`;
+      const modo = m && m.alt ? `<button class="modo" data-x="modo" data-k="${f.k}">${m.modo === 'scan' ? 'Escaneado · ver original' : 'Original · escanear'}</button>` : '';
+      return `<div class="ft">${src}<button class="x" data-x="quitar" data-k="${f.k}" aria-label="Quitar foto">${ico('cerrar')}</button>${modo}</div>`;
+    });
+    if (t.fotos.length < MAX_FOTOS) tiles.push(`<label for="e-file" class="ft add">${ico('camara')}${t.fotos.length ? 'Añadir' : 'Añadir foto'}</label>`);
+    v('#e-fotos').innerHTML = tiles.join('');
   }
-  poner();
-  if (viejo) idb.get('img:' + t.id).then(r => r && mostrarFoto(r.blob, t.tipo));
-  v('#e-file').addEventListener('change', ev => {
-    const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
-    if (f.size > 15 * 1024 * 1024) return aviso('El archivo es muy grande (máx. 15 MB)');
-    v('#e-foto').innerHTML = '<div class="ph"><div class="rueda" style="margin:0 auto 8px"></div>Preparando…</div>';
-    delete t.fotoId; procesar(f);
+  const ponerEstado = html => { if (capas.includes(c)) v('#e-estado').innerHTML = html; };
+  async function leer(f, blob) {
+    if (!cfg.url) { f.leer = true; ponerEstado(`<div class="leido">${ico('aviso')}Sin conexión con Google: rellena los datos a mano</div>`); return; }
+    leyendo++; enLectura.add(f.k); ponerEstado(`<div class="leyendo"><div class="rueda"></div>Leyendo el ticket…</div>`);
+    try {
+      const j = await api('leer', { b64: await aB64(blob), mime: f.mime }, 120000);
+      if (!capas.includes(c) || !t.fotos.includes(f)) return;   // ya guardado o cancelado: se leerá al sincronizar
+      delete f.leer;
+      const txt = (j.texto || '').trim();
+      t.texto = ((t.texto || '') + '\n' + txt).trim().slice(0, 8000);
+      const d = analizarTicket(txt, hoy());
+      if (capas.includes(c)) leerCampos();
+      const vacioC = { tienda: !t.tienda, total: t.total == null, num: !t.num, concepto: !t.concepto };
+      aplicarLectura(t, d, k => !tocado[k] && (k === 'fecha' ? !viejo && !t.fechaLeida : k === 'plazos' ? !viejo && !t.plazosTienda : vacioC[k]));
+      if (!capas.includes(c)) return;
+      poner();
+      const n = [d.tienda, d.fecha, d.total != null].filter(Boolean).length;
+      ponerEstado(`<div class="leido">${ico(n ? 'escudo' : 'aviso')}${n === 3 ? 'Ticket leído. Revisa que todo esté bien.' : n ? 'He leído parte del ticket: completa lo que falte.' : 'No he podido leer el texto: rellénalo a mano.'}</div>`);
+    } catch (e) {
+      f.leer = true;
+      ponerEstado(`<div class="leido">${ico('aviso')}${e.message === 'clave' ? 'Contraseña incorrecta (revisa Ajustes)' : 'Sin conexión: guárdalo y lo leeré cuando vuelva la cobertura'}</div>`);
+    } finally { leyendo--; enLectura.delete(f.k); }
+  }
+  async function anadir(archivo) {
+    if (t.fotos.length >= MAX_FOTOS) return aviso('Máximo ' + MAX_FOTOS + ' fotos por ticket');
+    if (archivo.size > 15 * 1024 * 1024) return aviso('El archivo es muy grande (máx. 15 MB)');
+    const f = { k: nuevoK(), fotoId: null, mime: archivo.type === 'application/pdf' ? 'application/pdf' : 'image/jpeg', mini: '' };
+    t.fotos.push(f); mem[f.k] = { cargando: true }; pintarFotos();
+    let p; try { p = await prepararArchivo(archivo); } catch (e) { t.fotos.splice(t.fotos.indexOf(f), 1); delete mem[f.k]; pintarFotos(); return aviso('No se pudo abrir el archivo'); }
+    mem[f.k] = p; f.mime = p.mime; f.mini = p.mini; pintarFotos();
+    await leer(f, p.blob);
+  }
+  v('#e-file').addEventListener('change', async ev => {
+    const fs = [...ev.target.files]; ev.target.value = '';
+    for (const f of fs) await anadir(f);
   });
 
-  const procesar = async archivo => {
-    try { prep = await prepararArchivo(archivo); } catch (e) { v('#e-foto').innerHTML = '<div class="ph">No se pudo abrir el archivo</div>'; return; }
-    t.tipo = prep.tipo; t.mini = prep.mini; mostrarFoto(prep.blob, prep.tipo);
-    if (!cfg.url) { v('#e-estado').innerHTML = `<div class="leido">${ico('aviso')}Sin conexión con Google: rellena los datos a mano</div>`; return; }
-    leyendo = true; v('#e-estado').innerHTML = `<div class="leyendo"><div class="rueda"></div>Leyendo el ticket…</div>`;
-    try {
-      const j = await api('leer', { id: t.id, b64: await aB64(prep.blob), mime: prep.mime }, 120000);
-      t.fotoId = j.fotoId; t.texto = (j.texto || '').slice(0, 6000);
-      const d = analizarTicket(t.texto, hoy());
-      if (!tocado['#e-tienda'] && d.tienda) t.tienda = d.tienda;
-      if (d.fecha) t.fecha = d.fecha;
-      if (!tocado['#e-total'] && d.total != null) t.total = d.total;
-      if (!tocado['#e-num'] && d.num) t.num = d.num;
-      t.nif = d.nif; t.productos = d.productos;
-      if (!tocado['#e-concepto'] && d.productos.length && !d.esSuper) t.concepto = d.productos[0] + (d.productos.length > 1 ? ' y ' + (d.productos.length - 1) + ' más' : '');
-      if (d.esSuper && !tocado.gar) t.garOpc = 0;
-      if (capas.includes(c)) {
-        const tienda = v('#e-tienda').value, concepto = v('#e-concepto').value;
-        poner();
-        if (tocado['#e-tienda']) v('#e-tienda').value = tienda; if (tocado['#e-concepto']) v('#e-concepto').value = concepto;
-        const n = [d.tienda, d.fecha, d.total != null].filter(Boolean).length;
-        v('#e-estado').innerHTML = `<div class="leido">${ico(n ? 'escudo' : 'aviso')}${n === 3 ? 'Ticket leído. Revisa que todo esté bien.' : n ? 'He leído parte del ticket: completa lo que falte.' : 'No he podido leer el texto: rellénalo a mano.'}</div>`;
-      }
-    } catch (e) {
-      if (capas.includes(c)) v('#e-estado').innerHTML = `<div class="leido">${ico('aviso')}${e.message === 'clave' ? 'Contraseña incorrecta (revisa Ajustes)' : 'No se pudo leer ahora: rellena a mano, la foto se guarda igual'}</div>`;
-    } finally { leyendo = false; }
-  };
-  if (archivo) procesar(archivo);
+  poner(); pintarFotos();
+  (async () => { for (const f of archivos || []) await anadir(f); })();
 
   c.addEventListener('click', async e => {
     const x = e.target.closest('[data-x]'); if (!x) return;
-    if (x.dataset.x === 'cerrar') {
-      if (!viejo && (prep || v('#e-tienda').value) && !confirm('¿Salir sin guardar este ticket?')) return;
+    const a = x.dataset.x;
+    if (a === 'quitar') {
+      const i = t.fotos.findIndex(f => f.k === x.dataset.k); if (i < 0) return;
+      if (t.fotos[i].fotoId && !confirm('¿Quitar esta foto del ticket?')) return;
+      delete mem[t.fotos[i].k]; t.fotos.splice(i, 1); pintarFotos(); return;
+    }
+    if (a === 'modo') {
+      const m = mem[x.dataset.k], f = t.fotos.find(f => f.k === x.dataset.k); if (!m || !m.alt || !f) return;
+      const otra = { blob: m.blob, mini: m.mini };
+      m.blob = m.alt.blob; m.mini = m.alt.mini; m.alt = otra; m.modo = m.modo === 'scan' ? 'orig' : 'scan';
+      f.mini = m.mini; pintarFotos(); return;
+    }
+    if (a === 'cerrar') {
+      if (!viejo && (t.fotos.length || v('#e-tienda').value) && !confirm('¿Salir sin guardar este ticket?')) return;
       return cerrarCapa();
     }
-    if (x.dataset.x === 'borrar') { if (confirm('¿Borrar este ticket y su foto?')) { borrarTicket(t.id); cerrarCapa(); cerrarCapa(); aviso('Ticket borrado'); } return; }
-    if (x.dataset.x === 'guardar') {
-      if (leyendo && !confirm('Todavía estoy leyendo el ticket. ¿Guardar ya?')) return;
-      t.tienda = v('#e-tienda').value.trim(); t.concepto = v('#e-concepto').value.trim(); t.num = v('#e-num').value.trim(); t.notas = v('#e-notas').value.trim();
-      t.fecha = v('#e-fecha').value || hoy();
-      const tot = v('#e-total').value.replace(/[^\d,.-]/g, ''); t.total = tot ? parseFloat(tot.includes(',') ? tot.replace(/\./g, '').replace(',', '.') : tot) : null;
-      if (isNaN(t.total)) t.total = null;
-      calcular();
-      if (!t.tienda && !t.concepto && !prep && !viejo) return aviso('Escribe al menos la tienda o qué compraste');
-      if (prep) await idb.set('img:' + t.id, { blob: prep.blob, mime: prep.mime }).catch(() => aviso('No se pudo guardar la foto en el dispositivo'));
-      t.t = Date.now();
+    if (a === 'borrar') { if (confirm('¿Borrar este ticket y sus fotos?')) { borrarTicket(t.id); cerrarCapa(); cerrarCapa(); aviso('Ticket borrado'); } return; }
+    if (a === 'guardar') {
+      if (Object.values(mem).some(m => m.cargando)) return aviso('Espera a que termine de preparar la foto');
+      if (leyendo && !confirm('Todavía estoy leyendo el ticket. ¿Guardar ya? Lo terminaré de leer después.')) return;
+      leerCampos();
+      if (!t.tienda && !t.concepto && !t.fotos.length && !viejo) return aviso('Escribe al menos la tienda o qué compraste');
+      if (tocado.fecha) t.fechaManual = true;
+      if (tocado.plazos) { t.plazosManual = true; delete t.plazosTienda; }
+      aplicarPlazos(t);
+      for (const f of t.fotos) if (mem[f.k]) await idb.set(claveImg(t, f), { blob: mem[f.k].blob, mime: f.mime }).catch(() => aviso('No se pudo guardar la foto en el dispositivo'));
+      if (viejo) (viejo.fotos || []).forEach(f => { if (!t.fotos.some(g => g.k === f.k)) idb.del(claveImg(viejo, f)); });
+      t.fotos.forEach(f => { if (enLectura.has(f.k)) f.leer = true; });
+      t.leerPend = t.fotos.some(f => f.leer);
+      delete t.mini; t.t = Date.now();
       const i = tickets.findIndex(x => x.id === t.id);
       if (i >= 0) tickets[i] = t; else tickets.unshift(t);
       pendientes.add(t.id); guardarLocal(); pintarInicio(); programarSync();
@@ -572,84 +738,102 @@ function editar(id, archivo) {
 
 function borrarTicket(id) {
   const i = tickets.findIndex(t => t.id === id); if (i < 0) return;
-  idb.del('img:' + id);
+  borrarLocales(tickets[i]);
   if (cfg.url) { tickets[i] = { id, t: Date.now(), borrado: true }; pendientes.add(id); }
   else tickets.splice(i, 1);
   guardarLocal(); pintarInicio(); programarSync();
 }
 
 /* ---------- Ficha ---------- */
-async function obtenerFoto(t) {
-  const r = await idb.get('img:' + t.id); if (r) return r;
-  if (!t.fotoId || !cfg.url) return null;
-  const j = await api('foto', { fotoId: t.fotoId });
+async function obtenerFoto(t, f) {
+  const r = await fotoLocal(t, f); if (r) return r;
+  if (!f.fotoId || !cfg.url) return null;
+  const j = await api('foto', { fotoId: f.fotoId });
   const v = { blob: deB64(j.b64, j.mime), mime: j.mime };
-  idb.set('img:' + t.id, v).catch(() => {});
+  idb.set(claveImg(t, f), v).catch(() => {});
   return v;
 }
 function abrirFicha(id) {
   const t = tickets.find(x => x.id === id); if (!t || t.borrado) return;
-  const e = estado(t);
-  let url = null, foto = null;
+  const e = estado(t), fotos = t.fotos || [], urls = {}, blobs = {};
+  let sel = 0;
   const barra = (desde, hasta) => { const tot = Math.max(1, entre(desde, hasta)), pas = Math.min(tot, Math.max(0, entre(desde, hoy()))); return `<div class="barrita"><i style="width:${100 - pas / tot * 100}%"></i></div>`; };
   const plazos = [];
   if (t.devHasta) plazos.push(`<div class="plazo ${e.devAbierta && e.diasDev <= 7 ? 'alerta' : ''}"><div class="ico">${ico('volver')}</div><div style="flex:1">
       <div class="pt">Devolución hasta el ${fCorta(t.devHasta)}</div><div class="ps">${e.devAbierta ? quedan(e.diasDev) : 'Plazo vencido'}</div>${e.devAbierta ? barra(t.fecha, t.devHasta) : ''}</div></div>`);
   if (t.garHasta) plazos.push(`<div class="plazo ${e.garAbierta && e.diasGar <= 30 ? 'alerta' : ''}"><div class="ico">${ico('escudo')}</div><div style="flex:1">
       <div class="pt">Garantía hasta el ${fCorta(t.garHasta)}</div><div class="ps">${e.garAbierta ? quedan(e.diasGar) : 'Garantía vencida'}</div>${e.garAbierta ? barra(t.fecha, t.garHasta) : ''}</div></div>`);
-  if (!plazos.length) plazos.push(`<div class="plazo"><div class="ico">${ico('reloj')}</div><div><div class="pt">Sin plazos</div><div class="ps">Se guarda hasta que lo borres</div></div></div>`);
+  if (t.importante) plazos.push(`<div class="plazo"><div class="ico">${ico('candado')}</div><div><div class="pt">No se borra nunca</div><div class="ps">Queda guardado aunque venzan los plazos</div></div></div>`);
+  else if (!plazos.length) plazos.push(`<div class="plazo"><div class="ico">${ico('reloj')}</div><div><div class="pt">Sin plazos</div><div class="ps">Se guarda hasta que lo borres</div></div></div>`);
   const datos = [['Fecha', fCorta(t.fecha)], ['Importe', eur(t.total)], ['Nº ticket', t.num], ['NIF tienda', t.nif],
     ['Productos', (t.productos || []).length > 1 ? t.productos.map(esc).join('<br>') : ''], ['Notas', esc(t.notas)]].filter(d => d[1]);
   const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3></h3>
       <button class="acc" data-x="editar">Editar</button></div>
     <div class="envoltura">
-      <div class="foto-grande" id="f-foto">${t.mini ? `<img src="${esc(t.mini)}" alt="" style="filter:blur(6px)">` : `<div class="ph">${ico(t.tipo === 'pdf' ? 'archivo' : 'ticket')}<br>${t.fotoId || t.mini ? 'Cargando…' : 'Sin foto'}</div>`}</div>
+      <div class="foto-grande" id="f-foto"></div>
+      ${fotos.length > 1 ? `<div class="fotos peque" id="f-tiras">${fotos.map((f, i) => `<button class="ft" data-x="sel" data-i="${i}">${f.mini ? `<img src="${esc(f.mini)}" alt="">` : `<div class="pdf">${ico('archivo')}<small>PDF</small></div>`}</button>`).join('')}</div>` : ''}
       <div class="titulo-ficha"><div class="tn">${esc(t.tienda || 'Sin tienda')}</div>${t.concepto ? `<div class="sub">${esc(t.concepto)}</div>` : ''}</div>
       ${e.papelera ? `<div class="aviso">${ico('papelera')}En la papelera: se borra en ${e.borraEn} ${e.borraEn === 1 ? 'día' : 'días'}</div>` : ''}
+      ${t.leerPend ? `<div class="leido">${ico('reloj')}Pendiente de leer el texto: lo haré cuando haya conexión</div>` : ''}
       <div class="bloque">${plazos.join('')}</div>
-      <div class="bloque">${datos.map(d => `<div class="dato"><div class="k">${d[0]}</div><div class="v">${d[0] === 'Productos' || d[0] === 'Notas' ? d[1] : esc(d[1])}</div></div>`).join('')}</div>
+      ${datos.length ? `<div class="bloque">${datos.map(d => `<div class="dato"><div class="k">${d[0]}</div><div class="v">${d[0] === 'Productos' || d[0] === 'Notas' ? d[1] : esc(d[1])}</div></div>`).join('')}</div>` : ''}
       <div class="botones">
-        <button class="btn col" data-x="compartir">${ico('compartir')}Enviar foto</button>
+        <button class="btn col" data-x="compartir">${ico('compartir')}${fotos.length > 1 ? 'Enviar fotos' : 'Enviar foto'}</button>
         <button class="btn col" data-x="editar">${ico('lapiz')}Editar</button>
         <button class="btn col peligro" data-x="borrar">${ico('papelera')}Borrar</button>
       </div>
       ${e.papelera ? `<button class="btn ancho pri" data-x="conservar">Conservar un año más</button>` : ''}
       ${t.texto ? `<details class="texto"><summary>Ver texto leído del ticket</summary><pre></pre></details>` : ''}
-    </div>`, () => { if (url) URL.revokeObjectURL(url); });
+    </div>`, () => Object.values(urls).forEach(u => URL.revokeObjectURL(u)));
   c.querySelector('.top h3').textContent = t.tienda || 'Ticket';
   if (t.texto) c.querySelector('pre').textContent = t.texto;
-  obtenerFoto(t).then(f => {
-    foto = f; const box = c.querySelector('#f-foto'); if (!f) { if (!t.mini) box.innerHTML = `<div class="ph">${ico('ticket')}<br>Sin foto · <b data-x="editar">Añadir</b></div>`; return; }
-    url = URL.createObjectURL(f.blob);
-    box.innerHTML = f.mime === 'application/pdf'
-      ? `<div class="ph">${ico('archivo')}<br><b>Factura en PDF</b><br><button class="btn" data-x="pdf" style="margin:10px auto 0">Abrir PDF</button></div>`
-      : `<img src="${url}" alt="Foto del ticket" data-x="ver"><button class="lupa" data-x="ver">${ico('ampliar')}Ampliar</button>`;
-  }).catch(() => { const box = c.querySelector('#f-foto'); box.insertAdjacentHTML('beforeend', '<button class="lupa" data-x="reintentar">Sin conexión · reintentar</button>'); });
+  const box = c.querySelector('#f-foto');
+  async function mostrar(i) {
+    sel = i; const f = fotos[i];
+    c.querySelectorAll('#f-tiras .ft').forEach((b, j) => b.classList.toggle('sel', j === i));
+    if (!f) { box.innerHTML = `<div class="ph">${ico('ticket')}<br>Sin foto · <b data-x="editar">Añadir</b></div>`; return; }
+    if (!urls[f.k]) box.innerHTML = f.mini ? `<img src="${esc(f.mini)}" alt="" style="filter:blur(6px)">` : `<div class="ph"><div class="rueda" style="margin:0 auto 8px"></div>Cargando…</div>`;
+    try {
+      if (!urls[f.k]) { const r = await obtenerFoto(t, f); if (!r) { if (sel === i) box.innerHTML = `<div class="ph">${ico('ticket')}<br>Foto no disponible</div>`; return; } blobs[f.k] = r; urls[f.k] = URL.createObjectURL(r.blob); }
+      if (sel !== i) return;
+      box.innerHTML = esPdf(blobs[f.k])
+        ? `<div class="ph">${ico('archivo')}<br><b>Factura en PDF</b><br><button class="btn" data-x="pdf" style="margin:10px auto 0">Abrir PDF</button></div>`
+        : `<img src="${urls[f.k]}" alt="Foto del ticket" data-x="ver"><button class="lupa" data-x="ver">${ico('ampliar')}Ampliar</button>`;
+    } catch (err) { if (sel === i) box.insertAdjacentHTML('beforeend', '<button class="lupa" data-x="reintentar">Sin conexión · reintentar</button>'); }
+  }
+  mostrar(0);
   c.addEventListener('click', async ev => {
     const x = ev.target.closest('[data-x]'); if (!x) return;
-    const a = x.dataset.x;
+    const a = x.dataset.x, f = fotos[sel];
     if (a === 'cerrar') cerrarCapa();
-    else if (a === 'editar') editar(t.id, null);
-    else if (a === 'borrar') { if (confirm('¿Borrar este ticket y su foto?')) { borrarTicket(t.id); cerrarCapa(); aviso('Ticket borrado'); } }
+    else if (a === 'sel') mostrar(+x.dataset.i);
+    else if (a === 'editar') editar(t.id, []);
+    else if (a === 'borrar') { if (confirm('¿Borrar este ticket y sus fotos?')) { borrarTicket(t.id); cerrarCapa(); aviso('Ticket borrado'); } }
     else if (a === 'conservar') { t.garHasta = sumarAnios(hoy(), 1); t.garOpc = 'otra'; t.t = Date.now(); pendientes.add(t.id); guardarLocal(); pintarInicio(); programarSync(); cerrarCapa(); aviso('Se conserva hasta ' + fCorta(t.garHasta)); }
-    else if (a === 'ver' && url) {
+    else if (a === 'ver' && f && urls[f.k]) {
       const vz = document.createElement('div'); vz.className = 'visor';
-      vz.innerHTML = `<img src="${url}" alt="Ticket"><button class="cerrar" aria-label="Cerrar">${ico('cerrar')}</button>`;
+      vz.innerHTML = `<img src="${urls[f.k]}" alt="Ticket"><button class="cerrar" aria-label="Cerrar">${ico('cerrar')}</button>`;
       vz.querySelector('img').addEventListener('dblclick', e2 => e2.target.classList.toggle('zoom'));
       vz.querySelector('.cerrar').addEventListener('click', () => vz.remove());
       document.body.appendChild(vz);
     }
-    else if (a === 'pdf' && url) window.open(url, '_blank');
-    else if (a === 'reintentar') { cerrarCapa(); setTimeout(() => abrirFicha(t.id), 40); }
+    else if (a === 'pdf' && f && urls[f.k]) window.open(urls[f.k], '_blank');
+    else if (a === 'reintentar') mostrar(sel);
     else if (a === 'compartir') {
-      if (!foto) return aviso('La foto aún no está disponible');
-      const nombre = ((t.tienda || 'ticket') + ' ' + (t.fecha || '')).trim().replace(/[^\w\- áéíóúñ]/gi, '') + (foto.mime === 'application/pdf' ? '.pdf' : '.jpg');
-      const file = new File([foto.blob], nombre, { type: foto.mime });
-      const txt = [t.tienda, t.concepto, t.fecha && 'Compra: ' + fCorta(t.fecha), t.total != null && 'Importe: ' + eur(t.total), t.num && 'Nº: ' + t.num].filter(Boolean).join('\n');
+      if (!fotos.length) return aviso('Este ticket no tiene fotos');
+      x.disabled = true;
       try {
-        if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text: txt });
-        else { const l = document.createElement('a'); l.href = url; l.download = nombre; l.click(); }
-      } catch (e) {}
+        const base = ((t.tienda || 'ticket') + ' ' + (t.fecha || '')).trim().replace(/[^\w\- áéíóúñ]/gi, '');
+        const files = [];
+        for (const [i, g] of fotos.entries()) {
+          const r = blobs[g.k] || await obtenerFoto(t, g).catch(() => null); if (!r) continue;
+          files.push(new File([r.blob], base + (fotos.length > 1 ? ' (' + (i + 1) + ')' : '') + (esPdf(r) ? '.pdf' : '.jpg'), { type: r.mime }));
+        }
+        if (!files.length) return aviso('Las fotos aún no están disponibles');
+        const txt = [t.tienda, t.concepto, t.fecha && 'Compra: ' + fCorta(t.fecha), t.total != null && 'Importe: ' + eur(t.total), t.num && 'Nº: ' + t.num].filter(Boolean).join('\n');
+        if (navigator.canShare && navigator.canShare({ files })) await navigator.share({ files, text: txt });
+        else files.forEach(fl => { const l = document.createElement('a'); l.href = URL.createObjectURL(fl); l.download = fl.name; l.click(); });
+      } catch (err) {} finally { x.disabled = false; }
     }
   });
 }
@@ -669,12 +853,30 @@ async function sincronizar() {
   if (localStorage.getItem('mt-clave-mala') === cfg.clave) { estadoSync = 'err'; punto(); return; }
   sincronizando = true; punto();
   try {
-    // 1. Fotos guardadas sin conexión
-    for (const t of tickets.filter(t => !t.borrado && !t.fotoId)) {
-      const f = await idb.get('img:' + t.id); if (!f) continue;
-      const j = await api('subir', { id: t.id, b64: await aB64(f.blob), mime: f.mime }, 120000);
-      t.fotoId = j.fotoId; t.t = Date.now(); pendientes.add(t.id); guardarLocal();
+    // 1. Fotos sin subir y textos sin leer (guardados sin cobertura)
+    let leidos = false;
+    for (const t0 of tickets.filter(t => !t.borrado && (t.fotos || []).some(f => !f.fotoId || f.leer))) {
+      for (const f0 of t0.fotos.filter(f => !f.fotoId || f.leer)) {
+        const loc = await fotoLocal(t0, f0); if (!loc) continue;
+        const b64 = await aB64(loc.blob);
+        let txt = null, fotoId = null;
+        if (f0.leer) txt = ((await api('leer', { b64, mime: f0.mime }, 120000)).texto || '').trim();
+        if (!f0.fotoId) fotoId = (await api('subir', { id: t0.id + '-' + f0.k, b64, mime: f0.mime }, 120000)).fotoId;
+        const t = tickets.find(x => x.id === t0.id), f = t && !t.borrado && (t.fotos || []).find(x => x.k === f0.k);
+        if (!f) continue;
+        if (fotoId) f.fotoId = fotoId;
+        if (txt !== null) {
+          delete f.leer; leidos = true;
+          t.texto = ((t.texto || '') + '\n' + txt).trim().slice(0, 8000);
+          aplicarLectura(t, analizarTicket(txt, hoy()), k => ({
+            tienda: !t.tienda, total: t.total == null, num: !t.num, concepto: !t.concepto,
+            fecha: !t.fechaManual && !t.fechaLeida, plazos: !t.plazosManual && !t.plazosTienda
+          })[k]);
+        }
+        t.leerPend = t.fotos.some(x => x.leer); t.t = Date.now(); pendientes.add(t.id); guardarLocal();
+      }
     }
+    if (leidos) pintarInicio();
     // 2. Datos
     const envio = tickets.filter(t => pendientes.has(t.id));
     const marcas = {}; envio.forEach(t => marcas[t.id] = t.t);
@@ -684,8 +886,12 @@ async function sincronizar() {
     const ids = new Set(nuevos.map(t => t.id));
     tickets.forEach(t => { if (!ids.has(t.id) && pendientes.has(t.id)) nuevos.push(t); });
     const antes = JSON.stringify(vivos().map(t => t.id + t.t));
-    nuevos.filter(t => t.borrado).forEach(t => { if (local[t.id] && !local[t.id].borrado) idb.del('img:' + t.id); });
-    tickets = nuevos;
+    nuevos.forEach(n => {
+      const l = local[n.id]; if (!l || l.borrado || l === n) return;
+      if (n.borrado) borrarLocales(l);
+      else (l.fotos || []).forEach(f => { if (!(n.fotos || []).some(g => g.k === f.k)) idb.del(claveImg(l, f)); });
+    });
+    tickets = nuevos.map(migrar);
     envio.forEach(t => { const a = local[t.id]; if (!a || a.t === marcas[t.id]) pendientes.delete(t.id); });
     estadoSync = 'ok'; guardarLocal(); purgarLocal();
     if (antes !== JSON.stringify(vivos().map(t => t.id + t.t))) pintarInicio();
@@ -705,7 +911,7 @@ $('#t-inicio').addEventListener('click', () => { while (capas.length) cerrarCapa
 function abrirAjustes() {
   if (capas.length) return;
   $('#t-ajustes').classList.add('on'); $('#t-inicio').classList.remove('on');
-  const n = vivos().length, np = vivos().filter(t => estado(t).papelera).length;
+  const n = vivos().length, np = vivos().filter(t => estado(t).papelera).length, ni = vivos().filter(t => t.importante).length;
   const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3>Ajustes</h3></div>
     <div class="envoltura ajustes">
       <h2 class="sec">Sincronización con Google</h2>
@@ -717,8 +923,8 @@ function abrirAjustes() {
       <button class="btn ancho pri" data-x="probar">${ico('sync')}Guardar y sincronizar</button>
       <p>Las fotos y los datos se guardan en tu Google Drive (carpeta «Mis Tickets») y se sincronizan entre el iPhone y el iPad. Los avisos llegan por Google Calendar: 3 días antes del último día de devolución y 3 semanas antes de que acabe la garantía.</p>
       <h2 class="sec">Borrado automático</h2>
-      <div class="bloque"><div class="dato"><div class="k">Tickets</div><div class="v">${n} guardados${np ? ' · ' + np + ' en la papelera' : ''}</div></div>
-        <div class="dato"><div class="k">Cuándo</div><div class="v" style="font-weight:600">Cuando vencen la devolución y la garantía, el ticket pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con su foto, también de Drive.</div></div></div>
+      <div class="bloque"><div class="dato"><div class="k">Tickets</div><div class="v">${n} guardados${np ? ' · ' + np + ' en la papelera' : ''}${ni ? ' · ' + ni + ' sin borrar nunca' : ''}</div></div>
+        <div class="dato"><div class="k">Cuándo</div><div class="v" style="font-weight:600">Cuando vencen la devolución y la garantía, el ticket pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con sus fotos, también de Drive. Los marcados «No borrar nunca» se quedan siempre.</div></div></div>
       <p style="text-align:center;margin-top:22px">Mis Tickets ${VERSION}</p>
     </div>`, () => { $('#t-ajustes').classList.remove('on'); $('#t-inicio').classList.add('on'); });
   c.querySelector('#a-url').value = cfg.url; c.querySelector('#a-clave').value = cfg.clave;
