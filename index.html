@@ -301,6 +301,7 @@ body.teclado{padding-bottom:24px}
   <symbol id="i-descargar" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></symbol>
   <symbol id="i-mensaje" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
   <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+  <symbol id="i-pegar" viewBox="0 0 24 24"><path d="M9 4h6v3H9z"/><path d="M15 5.5h2.5a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1H9"/><path d="M9 12h6M9 15.5h4"/></symbol>
   <symbol id="i-adelante" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.5L4 8.5M4 13a8 8 0 0 0 14.3 4.5L20 15.5"/><path d="M4 4v4.5h4.5M20 20v-4.5h-4.5"/></symbol>
 </svg>
@@ -333,7 +334,7 @@ body.teclado{padding-bottom:24px}
 <script src="extras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v9';
+const VERSION = 'v10';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -691,20 +692,48 @@ function nuevoTicket() {
         <label for="f-camara">${ico('camara')}Hacer foto<small>al ticket</small></label>
         <label for="f-archivo">${ico('archivo')}Elegir archivos<small>fotos o factura PDF</small></label>
       </div>
-      <p class="nota-form">Pon el ticket sobre una superficie oscura: lo recorto y lo dejo como escaneado. Después leo el texto y relleno tienda, fecha, importe y plazos.${cfg.url ? '' : ' <b>Para leer los tickets solos, configura la conexión en Ajustes.</b>'}</p>
-      <button class="btn ancho" data-x="manual">Escribir sin foto</button>
+      <button class="btn ancho" data-x="pegar">${ico('pegar')}Pegar imagen copiada</button>
+      <button class="btn ancho" data-x="manual">${ico('lapiz')}Escribir sin foto</button>
+      <p class="nota-form">Pon el ticket sobre una superficie oscura: lo recorto y lo dejo como escaneado. También puedes copiar una captura o una foto (en Fotos: Compartir › Copiar) y pegarla. Después leo el texto y relleno tienda, fecha, importe y plazos.${cfg.url ? '' : ' <b>Para leer los tickets solos, configura la conexión en Ajustes.</b>'}</p>
     </div>`);
   c.addEventListener('click', e => {
     const x = e.target.closest('[data-x]'); if (!x) return;
     if (x.dataset.x === 'cerrar') cerrarCapa();
     if (x.dataset.x === 'manual') { cerrarCapa(); setTimeout(() => editar(null, []), 50); }
+    if (x.dataset.x === 'pegar') pegarImagen();
   });
 }
+function ticketCon(fs) { while (capas.length) cerrarCapa(); setTimeout(() => editar(null, fs), 60); }
 ['#f-camara', '#f-archivo'].forEach(s => $(s).addEventListener('change', e => {
-  const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
-  while (capas.length) cerrarCapa();
-  setTimeout(() => editar(null, fs), 60);
+  const fs = [...e.target.files]; e.target.value = ''; if (fs.length) ticketCon(fs);
 }));
+
+// Pegar una imagen copiada (captura, foto de Fotos, imagen de un correo o de la web)
+const esImagenOPdf = t => /^image\//.test(t) || t === 'application/pdf';
+function archivoPegado(blob, tipo) { return new File([blob], 'pegada-' + Date.now() + '.' + (tipo === 'application/pdf' ? 'pdf' : (tipo.split('/')[1] || 'png').replace('jpeg', 'jpg')), { type: tipo }); }
+async function pegarImagen(destino) {
+  if (!navigator.clipboard || !navigator.clipboard.read) return aviso('Este navegador no deja pegar desde aquí: usa «Elegir archivos»');
+  try {
+    const fs = [];
+    for (const it of await navigator.clipboard.read()) {
+      const tipo = it.types.find(esImagenOPdf);
+      if (tipo) fs.push(archivoPegado(await it.getType(tipo), tipo));
+    }
+    if (!fs.length) return aviso('No hay ninguna imagen copiada. Copia la captura o la foto y vuelve a pulsar.');
+    destino ? fs.forEach(destino) : ticketCon(fs);
+  } catch (e) {
+    registrar('pegar', e);
+    aviso(e && e.name === 'NotAllowedError' ? 'No se ha pegado nada: toca «Pegar» en el aviso que sale' : 'No se pudo pegar la imagen');
+  }
+}
+// Con teclado (iPad u ordenador): ⌘V / Ctrl+V pega en el ticket abierto o crea uno nuevo
+document.addEventListener('paste', e => {
+  const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => esImagenOPdf(f.type));
+  if (!fs.length) return;                       // texto normal: que se pegue en el campo
+  e.preventDefault();
+  const top = capas[capas.length - 1];
+  if (top && top._anadir) fs.forEach(top._anadir); else ticketCon(fs);
+});
 
 function editar(id, archivos) {
   const viejo = id ? tickets.find(t => t.id === id) : null;
@@ -808,6 +837,7 @@ function editar(id, archivos) {
       return `<div class="ft">${src}<button class="x" data-x="quitar" data-k="${f.k}" aria-label="Quitar foto">${ico('cerrar')}</button>${modo}</div>`;
     });
     if (t.fotos.length < MAX_FOTOS) tiles.push(`<label for="e-file" class="ft add">${ico('camara')}${t.fotos.length ? 'Añadir' : 'Añadir foto'}</label>`);
+    if (t.fotos.length < MAX_FOTOS && navigator.clipboard && navigator.clipboard.read) tiles.push(`<button class="ft add" data-x="pegar-e">${ico('pegar')}Pegar</button>`);
     v('#e-fotos').innerHTML = tiles.join('');
   }
   const ponerEstado = html => { if (capas.includes(c)) v('#e-estado').innerHTML = html; };
@@ -847,12 +877,14 @@ function editar(id, archivos) {
     for (const f of fs) await anadir(f);
   });
 
+  c._anadir = anadir;
   poner(); pintarFotos();
   (async () => { for (const f of archivos || []) await anadir(f); })();
 
   c.addEventListener('click', async e => {
     const x = e.target.closest('[data-x]'); if (!x) return;
     const a = x.dataset.x;
+    if (a === 'pegar-e') return pegarImagen(anadir);
     if (a === 'quitar') {
       const i = t.fotos.findIndex(f => f.k === x.dataset.k); if (i < 0) return;
       if (t.fotos[i].fotoId && !confirm('¿Quitar esta foto del ticket?')) return;

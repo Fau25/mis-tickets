@@ -94,6 +94,23 @@ with sync_playwright() as p:
     A.click('.capa .top [data-x=guardar]'); A.wait_for_timeout(2500)
     ok(len(srv['fotos']) == 2, 'fotos subidas a Drive', srv['fotos'].keys())
 
+    print('Pegar imagen copiada')
+    ctx.grant_permissions(['clipboard-read', 'clipboard-write'], origin=H.rstrip('/'))
+    A.evaluate("""async (b64) => { const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+        const png = await new Promise(ok => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; c.getContext('2d').drawImage(im, 0, 0); c.toBlob(ok, 'image/png'); }; im.src = URL.createObjectURL(new Blob([a], {type: 'image/jpeg'})); });
+        await navigator.clipboard.write([new ClipboardItem({'image/png': png})]); }""", base64.b64encode((TMP / 'ticket.jpg').read_bytes()).decode())
+    A.click('#b-mas'); A.click('[data-x=pegar]'); A.wait_for_selector('.leido', timeout=15000); A.wait_for_timeout(800)
+    ok(A.locator('#e-fotos .ft img').count() == 1 and A.input_value('#e-tienda') == 'MediaMarkt', 'pegar crea el ticket con la imagen y la lee')
+    A.click('#e-fotos [data-x=pegar-e]'); A.wait_for_timeout(1500)
+    ok(A.locator('#e-fotos .ft img').count() == 2, 'pegar añade otra foto al ticket abierto')
+    A.evaluate("""async () => { const blob = await (await fetch(document.querySelector('#e-fotos .ft img').src)).blob(); const dt = new DataTransfer();
+        dt.items.add(new File([blob], 'x.png', {type: 'image/png'})); document.dispatchEvent(new ClipboardEvent('paste', {clipboardData: dt, bubbles: true})); }""")
+    A.wait_for_timeout(1500); ok(A.locator('#e-fotos .ft img').count() == 3, '⌘V con teclado añade la imagen pegada')
+    A.click('.capa .top [data-x=cerrar]'); A.wait_for_timeout(300)
+    A.evaluate("navigator.clipboard.writeText('hola')"); A.click('#b-mas'); A.click('[data-x=pegar]'); A.wait_for_timeout(500)
+    ok('No hay ninguna imagen' in A.inner_text('.toast'), 'avisa si lo copiado no es una imagen', A.inner_text('.toast'))
+    A.evaluate('while(capas.length) cerrarCapa()')
+
     print('Plazos, papelera y «No borrar nunca»')
     manual(A, 'Camisa', 'Zara', '2026-10-20', dev='14', gar='0')
     pista, hd = manual(A, 'Pantalón', 'Zara', '2026-10-27')
