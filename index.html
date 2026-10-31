@@ -2,7 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Tickets y facturas con su foto, plazos de devolución y garantía. App personal.">
+<meta name="robots" content="noindex, nofollow">
 <title>Mis Tickets</title>
 <meta name="theme-color" content="#ECECE9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
@@ -18,7 +20,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#ECECE9; --card:#FFFFFF; --ink:#1E1E1C; --txt:#1E1E1C; --sec:#6A6A65; --soft:#ECECE9; --soft2:#F4F4F1; --line:#E2E2DE; --track:#DEDEDA;
+  --bg:#ECECE9; --card:#FFFFFF; --ink:#1E1E1C; --txt:#1E1E1C; --sec:#5C5C57; --soft:#ECECE9; --soft2:#F4F4F1; --line:#E2E2DE; --track:#DEDEDA;
   --inv:#1E1E1C; --inv-txt:#F4F4F1; --inv-sec:#A9A9A3; --inv-line:#363633; --inv-2:#2A2A28;
   --ok:#4E9A62; --warn:#C9962B; --err:#C4402F;
   --barra:rgba(255,255,255,.94); --sombra:0 8px 24px rgba(30,30,28,.08);
@@ -36,7 +38,6 @@ button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer}
 svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .oculto{display:none!important}
-.mono{font-family:var(--mono);letter-spacing:.01em}
 .envoltura{max-width:720px;margin:0 auto;padding:0 20px}
 
 /* Cabecera */
@@ -45,17 +46,18 @@ header.cab{padding:calc(14px + env(safe-area-inset-top)) 0 4px}
 .cab .tit{display:flex;flex-direction:column;gap:2px;min-width:0}
 .cab .hoy{font-size:13px;color:var(--sec);font-weight:500;display:flex;align-items:center;gap:8px}
 .cab h1{font-size:30px;font-weight:800;margin:0;letter-spacing:-.8px;line-height:1.1}
-.punto{width:8px;height:8px;border-radius:50%;background:#B5B5AF;border:0;padding:0;flex:none}
+.punto{width:8px;height:8px;border-radius:50%;background:#B5B5AF;border:0;padding:0;flex:none;position:relative}
+button.punto::after{content:"";position:absolute;inset:-14px}
 .punto.ok{background:var(--ok)}.punto.pend{background:var(--warn)}.punto.err{background:var(--err)}
 .cab .der{margin-left:auto}
 .boton-icono{width:46px;height:46px;border-radius:50%;border:0;background:var(--card);display:grid;place-items:center;color:var(--ink);flex:none}
 .boton-icono svg.i{width:20px;height:20px}
 .boton-icono:active{opacity:.7}
 
-.buscar{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:16px;padding:0 16px;height:48px;margin-top:16px;color:#8C8C86}
+.buscar{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:16px;padding:0 16px;height:48px;margin-top:16px;color:#74746D}
 .buscar svg.i{width:18px;height:18px}
 .buscar input{border:0;outline:0;background:transparent;flex:1;height:100%;color:var(--txt);font-size:16px;min-width:0}
-.buscar input::placeholder{color:#8C8C86}
+.buscar input::placeholder{color:#74746D}
 
 .filtros{display:grid;grid-template-columns:repeat(4,1fr);background:var(--track);border-radius:14px;padding:4px;margin-top:12px}
 .filtros button{border:0;background:transparent;border-radius:10px;padding:9px 0;min-height:40px;font-size:13px;font-weight:600;color:var(--sec)}
@@ -110,7 +112,7 @@ nav.barra .tab.on{color:var(--ink);font-weight:700}
 .capa{--fondo:var(--bg);position:fixed;inset:0;z-index:10;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(30px + env(safe-area-inset-bottom));animation:entra .2s ease}
 @keyframes entra{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
 .capa .top{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 20px 10px}
-.capa .top h3{font-size:15px;font-weight:700;margin:0;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.capa .top h2{font-size:15px;font-weight:700;margin:0;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .capa .top .acc{border:0;background:var(--ink);color:var(--card);font-weight:700;height:46px;padding:0 18px;font-size:14px;border-radius:999px}
 .capa .top .acc.sec{background:var(--card);color:var(--ink)}
 
@@ -180,7 +182,7 @@ nav.barra .tab.on{color:var(--ink);font-weight:700}
 
 .btn{border:0;border-radius:999px;height:54px;padding:0 18px;font-weight:700;background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px}
 .btn svg.i{width:20px;height:20px}
-.btn.pri,.btn.osc{background:var(--ink);color:var(--card)}
+.btn.pri{background:var(--ink);color:var(--card)}
 .btn.peligro{color:var(--err)}
 .btn.ancho{width:100%;margin-top:12px}
 .btn:disabled{opacity:.5}
@@ -303,6 +305,7 @@ body.teclado{padding-bottom:24px}
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.5L4 8.5M4 13a8 8 0 0 0 14.3 4.5L20 15.5"/><path d="M4 4v4.5h4.5M20 20v-4.5h-4.5"/></symbol>
 </svg>
 
+<noscript><p style="padding:24px;font-family:system-ui">Mis Tickets necesita JavaScript activado.</p></noscript>
 <header class="cab"><div class="envoltura">
   <div class="fila">
     <div class="tit"><span class="hoy"><span id="hoy"></span><button class="punto" id="punto" aria-label="Estado de sincronización"></button></span><h1>Mis Tickets</h1></div>
@@ -310,7 +313,7 @@ body.teclado{padding-bottom:24px}
   </div>
   <label class="buscar"><svg class="i"><use href="#i-lupa"/></svg><input id="buscar" type="search" placeholder="Buscar producto o tienda" autocomplete="off" enterkeyhint="search" autocorrect="off"></label>
   <div class="filtros" id="filtros">
-    <button data-f="todos" class="on">Todos</button><button data-f="dev">Devolución</button><button data-f="gar">Garantía</button><button data-f="papelera">Papelera</button>
+    <button data-f="todos" class="on" aria-pressed="true">Todos</button><button data-f="dev" aria-pressed="false">Devolución</button><button data-f="gar" aria-pressed="false">Garantía</button><button data-f="papelera" aria-pressed="false">Papelera</button>
   </div>
 </div></header>
 
@@ -330,7 +333,7 @@ body.teclado{padding-bottom:24px}
 <script src="extras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v8';
+const VERSION = 'v9';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -503,10 +506,12 @@ function fila(t, oscuro) {
     <div class="corte"></div>
     <div class="abajo"><span class="fecha">${fCorta(t.fecha)}${n ? ' · ' + n + (n === 1 ? ' foto' : ' fotos') : ''}</span>${chipDe(t, e)}</div></button>`;
 }
+const cacheBusca = new WeakMap();
 function coincide(t) {
   if (!texto) return true;
-  const q = norm(texto);
-  return [t.tienda, t.concepto, t.num, t.ident, t.barras, t.notas, (t.productos || []).join(' '), t.texto].some(x => norm(x).includes(q));
+  let s = cacheBusca.get(t);
+  if (s === undefined) { s = norm([t.tienda, t.concepto, t.num, t.ident, t.barras, t.notas, (t.productos || []).join(' '), t.texto].filter(Boolean).join('\n')); cacheBusca.set(t, s); }
+  return s.includes(norm(texto));
 }
 function pintarInicio() {
   const lista = vivos().filter(coincide).map(t => ({ t, e: estado(t) }));
@@ -542,25 +547,44 @@ const vacio = (i, t, s) => `<div class="vacio">${ico(i)}<b>${t}</b>${s}</div>`;
 $('#inicio').addEventListener('click', e => { const b = e.target.closest('.ticket'); if (b) abrirFicha(b.dataset.id); });
 $('#filtros').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  filtro = b.dataset.f; document.querySelectorAll('#filtros button').forEach(x => x.classList.toggle('on', x === b)); pintarInicio();
+  filtro = b.dataset.f; document.querySelectorAll('#filtros button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); pintarInicio();
 });
-$('#buscar').addEventListener('input', e => { texto = e.target.value.trim(); pintarInicio(); });
+let buscaT;
+$('#buscar').addEventListener('input', e => { clearTimeout(buscaT); buscaT = setTimeout(() => { texto = e.target.value.trim(); pintarInicio(); }, 120); });
 
 /* ---------- Capas ---------- */
 const capas = [];
+function fondoInerte() {
+  const tapa = capas.length > 0;
+  ['header.cab', '#inicio', 'nav.barra'].forEach(s => { const el = $(s); if (el) el.inert = tapa; });
+  capas.forEach((c, i) => c.inert = i < capas.length - 1);
+}
 function abrirCapa(html, alCerrar) {
   const c = document.createElement('div'); c.className = 'capa'; c.innerHTML = html; c._cerrar = alCerrar;
-  document.body.appendChild(c); capas.push(c); document.body.style.overflow = 'hidden'; return c;
+  c.setAttribute('role', 'dialog'); c.setAttribute('aria-modal', 'true');
+  const tit = c.querySelector('.top h2'); if (tit) { tit.id = 'tit-' + capas.length; c.setAttribute('aria-labelledby', tit.id); }
+  c._vuelta = document.activeElement;
+  document.body.appendChild(c); capas.push(c); document.body.style.overflow = 'hidden'; fondoInerte();
+  const primero = c.querySelector('.top button'); if (primero) primero.focus({ preventScroll: true });
+  return c;
 }
 function cerrarCapa() {
   const c = capas.pop(); if (!c) return;
   c._cerrar && c._cerrar(); c.remove();
   if (!capas.length) document.body.style.overflow = '';
+  fondoInerte();
+  if (c._vuelta && document.contains(c._vuelta)) c._vuelta.focus({ preventScroll: true });
 }
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const vz = $('.visor'); if (vz) { vz.remove(); return; }
+  const c = capas[capas.length - 1]; if (!c) return;
+  const b = c.querySelector('.top [data-x=cerrar]'); if (b) b.click();
+});
 
 let toastT;
 function aviso(m) {
-  let t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  let t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t); }
   t.textContent = m; clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 3200);
 }
 
@@ -661,7 +685,7 @@ async function api(accion, datos = {}, ms = 90000) {
 /* ---------- Añadir / editar ---------- */
 $('#b-mas').addEventListener('click', () => nuevoTicket());
 function nuevoTicket() {
-  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Cerrar">${ico('cerrar')}</button><h3>Nuevo ticket</h3></div>
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Cerrar">${ico('cerrar')}</button><h2>Nuevo ticket</h2></div>
     <div class="envoltura">
       <div class="elegir">
         <label for="f-camara">${ico('camara')}Hacer foto<small>al ticket</small></label>
@@ -693,7 +717,7 @@ function editar(id, archivos) {
   let leyendo = 0, tocado = {};
   const enLectura = new Set();
   const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Cerrar">${ico('cerrar')}</button>
-      <h3>${viejo ? 'Editar ticket' : 'Revisar ticket'}</h3><button class="acc" data-x="guardar">Guardar</button></div>
+      <h2>${viejo ? 'Editar ticket' : 'Revisar ticket'}</h2><button class="acc" data-x="guardar">Guardar</button></div>
     <div class="envoltura">
       <div class="fotos" id="e-fotos"></div>
       <input type="file" id="e-file" accept="image/*,application/pdf" multiple class="oculto">
@@ -702,7 +726,7 @@ function editar(id, archivos) {
         <label class="campo"><span>Qué compraste</span><input id="e-concepto" placeholder="Ej. Auriculares Sony" autocomplete="off" autocapitalize="sentences" enterkeyhint="next"></label>
         <label class="campo"><span>Tienda</span><input id="e-tienda" autocomplete="off" autocapitalize="words" enterkeyhint="next"></label>
         <div class="dos">
-          <label class="campo"><span>Fecha de compra</span><input id="e-fecha" type="date"></label>
+          <label class="campo"><span>Fecha de compra</span><input id="e-fecha" type="date" max="${hoy()}"></label>
           <label class="campo"><span>Importe (€)</span><input id="e-total" inputmode="decimal" placeholder="0,00" enterkeyhint="next"></label>
         </div>
         <label class="campo"><span>Nº de ticket o factura</span><input id="e-num" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next"></label>
@@ -739,17 +763,17 @@ function editar(id, archivos) {
   const leerCampos = () => {
     t.tienda = v('#e-tienda').value.trim(); t.concepto = v('#e-concepto').value.trim(); t.num = v('#e-num').value.trim(); t.ident = v('#e-ident').value.replace(/\s/g, ''); t.barras = v('#e-barras').value.replace(/\s/g, ''); t.notas = v('#e-notas').value.trim();
     t.fecha = v('#e-fecha').value || hoy(); t.importante = v('#e-imp').checked;
-    const tot = v('#e-total').value.replace(/[^\d,.-]/g, '');
-    t.total = tot ? parseFloat(tot.includes(',') ? tot.replace(/\./g, '').replace(',', '.') : tot) : null;
+    const tot = v('#e-total').value.replace(/[^\d,.]/g, '');   // sin negativos
+    t.total = tot ? parseFloat(tot.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(tot) ? tot.replace(/\./g, '').replace(',', '.') : tot) : null;   // «1.234» = 1234 €
     if (isNaN(t.total)) t.total = null;
   };
   function pintarPlazos() {
     aplicarPlazos(t);
     [['dev', 'devOpc', 'devHasta', 'Devolver hasta el'], ['gar', 'garOpc', 'garHasta', 'Garantía hasta el']].forEach(([k, o, h, txt]) => {
       const bs = [...v('#o-' + k).querySelectorAll('button')], fuera = t[o] !== 'otra' && +t[o] > 0 && !bs.some(b => b.dataset.v === String(t[o]));
-      bs.forEach(b => b.classList.toggle('on', String(t[o]) === b.dataset.v || (fuera && b.dataset.v === 'otra')));
+      bs.forEach(b => { const on = String(t[o]) === b.dataset.v || (fuera && b.dataset.v === 'otra'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
       const el = v('#h-' + k), pre = fuera ? t[o] + (k === 'dev' ? ' días' : +t[o] === 1 ? ' año' : ' años') + ' · ' : '';
-      if (t[o] === 'otra') el.innerHTML = `${txt} <input type="date" data-h="${h}" value="${t[h] || ''}">`;
+      if (t[o] === 'otra') el.innerHTML = `${txt} <input type="date" data-h="${h}" value="${esc(/^\d{4}-\d{2}-\d{2}$/.test(t[h] || '') ? t[h] : '')}">`;
       else if (t[h]) { const d = entre(hoy(), t[h]); el.textContent = pre + txt + ' ' + fCorta(t[h]) + (d < 0 ? ' · ya vencido' : ''); }
       else el.textContent = k === 'dev' ? 'Sin devolución' : 'Sin garantía';
     });
@@ -903,12 +927,25 @@ const subtitulo = t => titulo(t) !== (t.tienda || 'Sin tienda') ? (t.tienda || '
 
 // Fotos del ticket en memoria (el menú de compartir del iPhone tiene que abrirse justo al tocar)
 function precargar(t, blobs) {
-  return Promise.all((t.fotos || []).map(f => blobs[f.k] ? null : obtenerFoto(t, f).then(r => { if (r) blobs[f.k] = r; }).catch(() => {})));
+  blobs.__fallo = false;
+  return Promise.all((t.fotos || []).map(f => blobs[f.k] ? null : obtenerFoto(t, f).then(r => { if (r) blobs[f.k] = r; else blobs.__fallo = true; }).catch(e => { blobs.__fallo = true; registrar('foto', e); })));
+}
+// ¿Están todas las fotos? Si no, avisa (y reintenta) y devuelve false
+function fotosListas(t, blobs) {
+  if (!(t.fotos || []).some(f => !blobs[f.k])) return true;
+  aviso(blobs.__fallo ? 'No se pueden descargar las fotos ahora (sin conexión). Inténtalo cuando tengas internet.' : 'Preparando las fotos… vuelve a pulsar en un momento');
+  precargar(t, blobs); return false;
+}
+// Descarga un archivo (ordenadores o navegadores sin menú de compartir)
+function descargar(file) {
+  const l = document.createElement('a'), u = URL.createObjectURL(file);
+  l.href = u; l.download = file.name; document.body.appendChild(l); l.click(); l.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 10000);
 }
 function accionFotos(t, blobs, modo, cont) {
   const fotos = t.fotos || [];
   if (!fotos.length) return aviso('Este ticket no tiene fotos');
-  if (fotos.some(f => !blobs[f.k])) { aviso('Preparando las fotos… vuelve a pulsar en un momento'); precargar(t, blobs); return; }
+  if (!fotosListas(t, blobs)) return;
   const base = (titulo(t) + ' ' + (t.fecha || '')).trim().replace(/[^\w\- áéíóúñü]/gi, '').slice(0, 60);
   const files = fotos.map((f, i) => { const r = blobs[f.k]; return new File([r.blob], base + (fotos.length > 1 ? ' (' + (i + 1) + ')' : '') + (esPdf(r) ? '.pdf' : '.jpg'), { type: r.mime }); });
   const txt = [titulo(t), t.tienda, t.fecha && 'Compra: ' + fCorta(t.fecha), t.total != null && 'Importe: ' + eur(t.total), t.num && 'Nº ticket: ' + t.num, t.ident && 'Identificador: ' + t.ident].filter(Boolean).join('\n');
@@ -917,7 +954,7 @@ function accionFotos(t, blobs, modo, cont) {
     if (!vista && !cont.querySelector('.pista-g')) cont.insertAdjacentHTML('beforeend', `<p class="nota-form pista-g" style="text-align:center">En el menú que se abre, elige «Guardar imagen» para llevarla a Fotos${fotos.some(f => esPdf(blobs[f.k])) ? ', o «Guardar en Archivos» si es un PDF' : ''}.</p>`);
   }
   if (navigator.canShare && navigator.canShare({ files })) navigator.share(modo === 'enviar' ? { files, text: txt } : { files }).catch(() => {});
-  else files.forEach(fl => { const l = document.createElement('a'); l.href = URL.createObjectURL(fl); l.download = fl.name; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(l.href), 4000); });
+  else files.forEach(descargar);
 }
 
 function abrirFicha(id) {
@@ -950,7 +987,7 @@ function abrirFicha(id) {
   const barras = t.barras && window.codigoBarras ? codigoBarras.svg(t.barras, 'currentColor', 54) : '';
   const f0 = fotos[0];
   const sub = subtitulo(t);
-  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3>Ticket</h3>
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h2>Ticket</h2>
       <button class="acc sec" data-x="editar">Editar</button></div>
     <div class="envoltura">
       ${e.papelera ? `<div class="aviso" style="margin:4px 0 12px">${ico('papelera')}En la papelera: se borra en ${e.borraEn} ${e.borraEn === 1 ? 'día' : 'días'}</div>` : ''}
@@ -995,7 +1032,10 @@ function abrirFicha(id) {
     else if (a === 'editar') editar(t.id, []);
     else if (a === 'fotos') fotos.length ? abrirFotos(t, blobs) : editar(t.id, []);
     else if (a === 'borrar') { if (confirm('¿Borrar este ticket y sus fotos?')) { borrarTicket(t.id); cerrarCapa(); aviso('Ticket borrado'); } }
-    else if (a === 'conservar') { t.garHasta = sumarAnios(hoy(), 1); t.garOpc = 'otra'; t.t = Date.now(); pendientes.add(t.id); guardarLocal(); pintarInicio(); programarSync(); cerrarCapa(); aviso('Se conserva hasta ' + fCorta(t.garHasta)); }
+    else if (a === 'conservar') {
+      const real = tickets.find(x => x.id === t.id && !x.borrado); if (!real) { cerrarCapa(); return aviso('Este ticket ya no existe'); }
+      real.garHasta = sumarAnios(hoy(), 1); real.garOpc = 'otra'; real.t = Date.now(); pendientes.add(real.id); guardarLocal(); pintarInicio(); programarSync(); cerrarCapa(); aviso('Se conserva hasta ' + fCorta(real.garHasta));
+    }
     else if (a === 'compartir') accionFotos(t, blobs, 'enviar');
     else if (a === 'guardar') accionFotos(t, blobs, 'guardar', x.closest('.acciones').parentNode);
     else if (a === 'reclamar') abrirReclamar(t, blobs);
@@ -1003,7 +1043,7 @@ function abrirFicha(id) {
       if (!resg) return aviso('Preparando el resguardo… vuelve a pulsar');
       const file = new File([resg], 'Resguardo ' + (titulo(t) + ' ' + (t.fecha || '')).replace(/[^\w\- áéíóúñü]/gi, '').slice(0, 60) + '.jpg', { type: 'image/jpeg' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) navigator.share({ files: [file] }).catch(() => {});
-      else { const l = document.createElement('a'); l.href = URL.createObjectURL(file); l.download = file.name; document.body.appendChild(l); l.click(); l.remove(); }
+      else descargar(file);
     }
   });
 }
@@ -1012,7 +1052,7 @@ function abrirFicha(id) {
 function abrirReclamar(t, blobs) {
   const e = estado(t);
   let tipo = e.devAbierta ? 'dev' : 'gar', problema = '', tocadoTexto = false;
-  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3>Reclamar o devolver</h3><span style="width:46px"></span></div>
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h2>Reclamar o devolver</h2><span style="width:46px"></span></div>
     <div class="envoltura">
       <div class="opciones" id="r-tipo" style="margin-top:4px"><button data-v="dev" style="grid-column:span 2">Devolución</button><button data-v="gar" style="grid-column:span 2">Garantía</button></div>
       <p class="nota-form" id="r-estado"></p>
@@ -1024,7 +1064,7 @@ function abrirReclamar(t, blobs) {
     </div>`);
   const v = s => c.querySelector(s);
   const pintar = () => {
-    c.querySelectorAll('#r-tipo button').forEach(b => b.classList.toggle('on', b.dataset.v === tipo));
+    c.querySelectorAll('#r-tipo button').forEach(b => { b.classList.toggle('on', b.dataset.v === tipo); b.setAttribute('aria-pressed', String(b.dataset.v === tipo)); });
     const abierto = tipo === 'dev' ? e.devAbierta : e.garAbierta, hasta = tipo === 'dev' ? t.devHasta : t.garHasta;
     v('#r-estado').textContent = !hasta ? (tipo === 'dev' ? 'Este ticket no tiene plazo de devolución guardado.' : 'Este ticket no tiene garantía guardada.')
       : abierto ? (tipo === 'dev' ? 'Puedes devolverlo hasta el ' : 'En garantía hasta el ') + fCorta(hasta) + '.' : 'Ojo: este plazo terminó el ' + fCorta(hasta) + '.';
@@ -1041,7 +1081,7 @@ function abrirReclamar(t, blobs) {
     else if (x.dataset.x === 'copiar') { (navigator.clipboard ? navigator.clipboard.writeText(texto) : Promise.reject()).then(() => aviso('Texto copiado')).catch(() => { v('#r-texto').select(); aviso('Selecciona y copia el texto'); }); }
     else if (x.dataset.x === 'enviar') {
       const fotos = t.fotos || [];
-      if (fotos.some(f => !blobs[f.k])) { aviso('Preparando el ticket… vuelve a pulsar en un momento'); precargar(t, blobs); return; }
+      if (!fotosListas(t, blobs)) return;
       const files = fotos.map((f, i) => new File([blobs[f.k].blob], 'Ticket ' + (i + 1) + (esPdf(blobs[f.k]) ? '.pdf' : '.jpg'), { type: blobs[f.k].mime }));
       const datos = files.length && navigator.canShare && navigator.canShare({ files }) ? { files, text: texto } : { text: texto };
       if (navigator.share) navigator.share(datos).catch(() => {});
@@ -1055,7 +1095,7 @@ function abrirFotos(t, blobs) {
   blobs = blobs || {};
   const fotos = t.fotos || [], urls = {};
   let sel = 0;
-  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3>Fotos del ticket</h3>
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h2>Fotos del ticket</h2>
       <button class="acc" data-x="compartir">Enviar</button></div>
     <div class="envoltura">
       <div class="foto-grande" id="f-foto"></div>
@@ -1099,13 +1139,34 @@ function abrirFotos(t, blobs) {
 }
 
 /* ---------- Sincronización ---------- */
-let sincronizando = false, syncT = null, estadoSync = '';
+let sincronizando = false, syncT = null, estadoSync = '', errorSync = '';
+// Registro de errores (últimos 30) para Ajustes › Diagnóstico
+function registrar(donde, e) {
+  try {
+    const l = JSON.parse(localStorage.getItem('mt-log') || '[]');
+    l.unshift({ f: new Date().toISOString().slice(0, 19).replace('T', ' '), d: donde, m: String((e && e.message) || e).slice(0, 200) });
+    localStorage.setItem('mt-log', JSON.stringify(l.slice(0, 30)));
+  } catch (x) {}
+}
+function motivoError(e) {
+  const m = (e && e.message) || '';
+  if (m === 'clave') return 'contraseña incorrecta';
+  if (m === 'bloqueado') return 'bloqueado 10 minutos por intentos fallidos';
+  if (m === 'accion') return 'el script de Google es de una versión anterior';
+  if (e && e.name === 'AbortError') return 'el script tarda demasiado en responder';
+  if (!navigator.onLine || e instanceof TypeError) return 'sin conexión o el script no responde';
+  return m || 'error desconocido';
+}
+window.addEventListener('error', e => registrar('app', e.error || e.message));
+window.addEventListener('unhandledrejection', e => registrar('app', e.reason));
 function punto() {
   const p = $('#punto'); p.className = 'punto';
-  if (!cfg.url) p.title = 'Sin sincronizar';
-  else if (estadoSync === 'err') p.classList.add('err');
-  else if (pendientes.size || sincronizando) p.classList.add('pend');
-  else p.classList.add('ok');
+  let txt = 'Sin sincronizar: los tickets solo están en este dispositivo';
+  if (!cfg.url) {}
+  else if (estadoSync === 'err') { p.classList.add('err'); txt = 'Error al sincronizar: ' + (errorSync || 'toca para ver Ajustes'); }
+  else if (pendientes.size || sincronizando) { p.classList.add('pend'); txt = 'Sincronizando…'; }
+  else { p.classList.add('ok'); txt = 'Todo sincronizado'; }
+  p.title = txt; p.setAttribute('aria-label', txt);
 }
 function programarSync(ms = 1500) { punto(); clearTimeout(syncT); syncT = setTimeout(sincronizar, ms); }
 async function sincronizar() {
@@ -1170,10 +1231,10 @@ async function sincronizar() {
       delete t.analizar; t.t = Date.now(); pendientes.add(t.id); analizados++;
     });
     if (analizados) programarSync(2000);
-    estadoSync = 'ok'; guardarLocal(); purgarLocal();
+    estadoSync = 'ok'; errorSync = ''; guardarLocal(); purgarLocal();
     if (antes !== JSON.stringify(vivos().map(t => t.id + t.t))) pintarInicio();
   } catch (e) {
-    estadoSync = 'err';
+    estadoSync = 'err'; errorSync = motivoError(e); registrar('sincronizar', e);
     if (e.message === 'clave') { try { localStorage.setItem('mt-clave-mala', cfg.clave); } catch (x) {} aviso('Contraseña incorrecta: revísala en Ajustes'); }
     if (e.message === 'bloqueado') aviso('Demasiados intentos: espera 10 minutos');
   } finally { sincronizando = false; punto(); }
@@ -1189,7 +1250,7 @@ function abrirAjustes() {
   if (capas.length) return;
   $('#t-ajustes').classList.add('on'); $('#t-inicio').classList.remove('on');
   const n = vivos().length, np = vivos().filter(t => estado(t).papelera).length, ni = vivos().filter(t => t.importante).length;
-  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h3>Ajustes</h3></div>
+  const c = abrirCapa(`<div class="top"><button class="boton-icono" data-x="cerrar" aria-label="Volver">${ico('atras')}</button><h2>Ajustes</h2></div>
     <div class="envoltura ajustes">
       <div class="carnet">
         <div class="ranura"></div>
@@ -1216,12 +1277,14 @@ function abrirAjustes() {
       <div class="bloque"><div class="dato"><div class="k">Tickets</div><div class="v">${n} guardados${np ? ' · ' + np + ' en la papelera' : ''}${ni ? ' · ' + ni + ' sin borrar nunca' : ''}</div></div>
         <div class="dato"><div class="k">Cuándo</div><div class="v" style="font-weight:600">Cuando vencen la devolución y la garantía, el ticket pasa a la papelera y a los ${DIAS_PAPELERA} días se borra con sus fotos, también de Drive. Los marcados «No borrar nunca» se quedan siempre.</div></div></div>
 
+      <details class="texto" id="a-diag"><summary>Diagnóstico (últimos errores)</summary><pre></pre></details>
     </div>`, () => { copiaZip = null; $('#t-ajustes').classList.remove('on'); $('#t-inicio').classList.add('on'); });
   c.querySelector('#a-url').value = cfg.url; c.querySelector('#a-clave').value = cfg.clave;
+  try { const l = JSON.parse(localStorage.getItem('mt-log') || '[]'); c.querySelector('#a-diag pre').textContent = l.length ? l.map(x => `${x.f} · ${x.d} · ${x.m}`).join('\n') : 'Sin errores registrados.'; } catch (e) {}
   const est = () => {
     const e = c.querySelector('#a-estado');
     e.innerHTML = !cfg.url ? `<span class="punto"></span>Sin configurar: los tickets solo están en este dispositivo`
-      : estadoSync === 'err' ? `<span class="punto err"></span>No se pudo sincronizar`
+      : estadoSync === 'err' ? `<span class="punto err"></span>No se pudo sincronizar: ${esc(errorSync || 'inténtalo de nuevo')}`
         : pendientes.size ? `<span class="punto pend"></span>${pendientes.size} cambio(s) por subir` : `<span class="punto ok"></span>Todo sincronizado`;
   };
   est();
@@ -1306,6 +1369,7 @@ window.addEventListener('touchmove', () => { if (document.activeElement && docum
 // Cabecera: el título se va con el scroll, buscador y filtros se quedan arriba
 function ajustarCabecera() { const b = $('.cab .buscar'); if (b) $('header.cab').style.top = -(b.offsetTop - 10) + 'px'; }
 window.addEventListener('resize', ajustarCabecera); ajustarCabecera();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarCabecera);
 // Deslizar desde el borde izquierdo para volver (como en las apps del iPhone)
 (() => {
   let x0 = 0, y0 = 0, capa = null, dx = 0;

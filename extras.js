@@ -16,7 +16,12 @@
     if (out.length === max && pal.join(' ').length > out.join(' ').length) out[max - 1] = out[max - 1].replace(/\s*\S*$/, '') + '…';
     return out;
   }
-  function redondo(x, X, Y, W, H, r, color) { x.fillStyle = color; x.beginPath(); x.roundRect(X, Y, W, H, r); x.fill(); }
+  function redondo(x, X, Y, W, H, r, color) {
+    x.fillStyle = color; x.beginPath();
+    if (x.roundRect) x.roundRect(X, Y, W, H, r);
+    else { x.moveTo(X + r, Y); x.arcTo(X + W, Y, X + W, Y + H, r); x.arcTo(X + W, Y + H, X, Y + H, r); x.arcTo(X, Y + H, X, Y, r); x.arcTo(X, Y, X + W, Y, r); x.closePath(); }   // iOS 15
+    x.fill();
+  }
 
   async function resguardo(t, titulo) {
     try { await Promise.all(['800 64px Manrope, system-ui, -apple-system, sans-serif', '600 30px Manrope, system-ui, -apple-system, sans-serif', '500 30px "JetBrains Mono"'].map(f => document.fonts.load(f))); } catch (e) {}
