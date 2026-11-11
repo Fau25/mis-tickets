@@ -334,7 +334,7 @@ body.teclado{padding-bottom:24px}
 <script src="extras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v10';
+const VERSION = 'v11';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1244,6 +1244,11 @@ async function sincronizar() {
     const base = {};
     tickets.forEach(t => { if (j.parcial || pendientes.has(t.id)) base[t.id] = t; });
     (j.tickets || []).forEach(s => { const l = local[s.id]; base[s.id] = l && (l.t || 0) > (s.t || 0) ? l : s; });
+    // Drive nunca olvida un ticket (los borrados quedan marcados). Si en una lista completa falta
+    // uno que este móvil tiene, Drive lo ha perdido: se conserva aquí y se vuelve a subir.
+    let resubir = 0;
+    if (!j.parcial) tickets.forEach(t => { if (!t.borrado && !base[t.id]) { base[t.id] = t; pendientes.add(t.id); resubir++; } });
+    if (resubir) { registrar('sincronizar', new Error('Drive no tenía ' + resubir + ' tickets: se vuelven a subir')); programarSync(1000); }
     const antes = JSON.stringify(vivos().map(t => t.id + t.t));
     Object.values(local).forEach(l => {
       const n = base[l.id]; if (l.borrado || n === l) return;

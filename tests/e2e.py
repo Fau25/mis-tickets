@@ -118,7 +118,7 @@ with sync_playwright() as p:
     manual(A, 'Lavadora', 'Bosch', '2023-01-10', dev='0', gar='1', imp=True); A.wait_for_timeout(2000)
     A.click('#b-mas'); A.click('[data-x=manual]'); A.fill('#e-concepto', 'Sofá'); A.fill('#e-total', '1.234'); A.click('.capa .top [data-x=guardar]'); A.wait_for_timeout(300)
     ok(A.evaluate("tickets.find(t=>t.concepto==='Sofá').total") == 1234, 'importe «1.234» = 1234 €', A.evaluate("tickets.find(t=>t.concepto==='Sofá').total"))
-    ok(A.evaluate("vivos().filter(t=>estado(t).papelera).length") == 0, 'lo importante no va a la papelera')
+    ok(A.evaluate("estado(tickets.find(t=>t.concepto==='Lavadora')).papelera") is False, 'lo importante no va a la papelera')
 
     print('Sin cobertura')
     srv['caido'] = True
@@ -195,6 +195,15 @@ with sync_playwright() as p:
     T = ticket('p3', garOpc='otra', garHasta='2029-01-01" autofocus onfocus="window.__x=1'); srv['tickets'] = {'p3': dict(T, s=1)}
     ctx, pg = nuevo(b, 'inyeccion', [T]); pg.click('.ticket'); pg.click('.capa .top [data-x=editar]'); pg.wait_for_timeout(500)
     ok(not pg.evaluate("[...document.querySelector('#h-gar input').attributes].some(a=>a.name==='onfocus')"), 'sin inyección de HTML en las fechas'); ctx.close()
+    print('Drive vacío no borra los tickets del móvil')
+    Ts = [ticket('r1', fecha='2026-10-25'), ticket('r2', concepto='Casco', fecha='2026-10-26', garOpc=3, garHasta='2029-10-26')]
+    srv['tickets'] = {}; ctx, pg = nuevo(b, 'drive-vacio', Ts); pg.evaluate("localStorage.removeItem('mt-desde')")
+    pg.evaluate('sincronizar()'); pg.wait_for_timeout(3500)
+    ok(pg.locator('.ticket').count() == 2, 'los tickets siguen en el móvil', pg.locator('.ticket').count())
+    ok(set(srv['tickets']) == {'r1', 'r2'}, 'y se vuelven a subir a Drive', list(srv['tickets'])); ctx.close()
+    srv['tickets'] = {'r1': dict(Ts[0], t=9, s=9, borrado=True)}; Ts2 = [dict(Ts[0])]
+    ctx, pg = nuevo(b, 'borrado-real', Ts2); pg.evaluate("localStorage.removeItem('mt-desde')"); pg.evaluate('sincronizar()'); pg.wait_for_timeout(2500)
+    ok(pg.locator('.ticket').count() == 0, 'un borrado hecho en otro dispositivo sí se aplica'); ctx.close()
     ctx, pg = nuevo(b, 'migracion', [dict(ticket('v1'), fotoId='FX', tipo='img', mini='data:image/gif;base64,R0lGODlhAQABAAAAACw=', fotos=None)], conectado=False)
     ok(pg.evaluate("JSON.stringify(tickets[0].fotos.map(f=>f.fotoId))") == '["FX"]', 'migra tickets de la v1'); ctx.close()
     b.close()
