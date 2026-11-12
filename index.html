@@ -276,6 +276,42 @@ body.teclado{padding-bottom:24px}
 .envoltura{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (min-width:760px){.lista{display:grid;grid-template-columns:1fr 1fr}}
+/* Escritorio: lista a la izquierda, ficha en un panel a la derecha y, desde 1280 px, subir y vencimientos en una 3.ª columna */
+.solo-pc,.lateral{display:none}
+@media (min-width:1024px){
+  nav.barra{display:none}
+  .solo-pc{display:inline-flex}
+  header.cab{width:496px}
+  header.cab .envoltura,main#inicio{max-width:468px;margin:0;padding-left:28px;padding-right:0}
+  main#inicio{padding-bottom:40px}
+  .lista{display:flex}
+  .nuevo-pc{align-items:center;gap:6px;height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font-weight:700;font-size:14px;margin-left:8px;cursor:pointer}
+  .nuevo-pc .i{width:18px;height:18px}
+  .ticket{cursor:pointer;transition:box-shadow .15s}
+  .ticket:hover{box-shadow:0 0 0 2px var(--line)}
+  .ticket.elegido{box-shadow:0 0 0 2px var(--ink)}
+  .capa.panel{inset:16px 28px 16px 496px;z-index:1;border-radius:28px;border:1px solid var(--line);animation:none;padding-bottom:24px}
+  .capa.panel .top{border-radius:28px 28px 0 0}
+  .capa.panel .top [data-x=cerrar]{visibility:hidden}
+  body.soltando-archivo::after{content:"Suelta para añadir el ticket";position:fixed;inset:12px;z-index:50;border:3px dashed var(--ink);border-radius:28px;background:color-mix(in srgb,var(--bg) 85%,transparent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;pointer-events:none}
+}
+@media (min-width:1280px){
+  .capa.panel{right:356px}
+  .lateral{display:flex;flex-direction:column;gap:16px;position:fixed;top:16px;right:28px;width:308px;bottom:16px;overflow:auto}
+  .lat-subir{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:26px 18px;border:2px dashed var(--line);border-radius:22px;cursor:pointer;color:var(--txt)}
+  .lat-subir:hover{border-color:var(--ink)}
+  .lat-subir .i{width:32px;height:32px}
+  .lat-subir b{font-size:16px}
+  .lat-subir small{font-size:13px;color:var(--sec,var(--txt2))}
+  .lat-caja{background:var(--card);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .lat-caja h2{margin:0;font-size:16px}
+  .lat-v{display:flex;align-items:center;gap:12px;border:0;background:none;padding:0;text-align:left;color:var(--txt);cursor:pointer;width:100%}
+  .lat-v .d{width:46px;height:46px;border-radius:12px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;font-weight:800;font-size:16px;line-height:1}
+  .lat-v .d small{font-size:11px;font-weight:600;margin-top:3px}
+  .lat-v .t{display:flex;flex-direction:column;min-width:0}
+  .lat-v .t b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lat-v .t small{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -311,6 +347,7 @@ body.teclado{padding-bottom:24px}
   <div class="fila">
     <div class="tit"><span class="hoy"><span id="hoy"></span><button class="punto" id="punto" aria-label="Estado de sincronización"></button></span><h1>Mis Tickets</h1></div>
     <button class="boton-icono der" id="b-ajustes-cab" aria-label="Ajustes"><svg class="i"><use href="#i-ajustes"/></svg></button>
+    <button class="solo-pc nuevo-pc" id="b-nuevo-pc"><svg class="i"><use href="#i-mas"/></svg>Añadir ticket</button>
   </div>
   <label class="buscar"><svg class="i"><use href="#i-lupa"/></svg><input id="buscar" type="search" placeholder="Buscar producto o tienda" autocomplete="off" enterkeyhint="search" autocorrect="off"></label>
   <div class="filtros" id="filtros">
@@ -319,6 +356,7 @@ body.teclado{padding-bottom:24px}
 </div></header>
 
 <main class="envoltura" id="inicio"></main>
+<aside class="lateral" id="lateral" aria-label="Subir tickets y próximos vencimientos"></aside>
 
 <nav class="barra"><div class="in">
   <button class="tab on" id="t-inicio"><svg class="i"><use href="#i-casa"/></svg>Inicio</button>
@@ -334,7 +372,7 @@ body.teclado{padding-bottom:24px}
 <script src="extras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v11';
+const VERSION = 'v12';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -541,11 +579,59 @@ function pintarInicio() {
   $('#inicio').innerHTML = html;
   const d = new Date(), nv = vivos().length;
   const MESL = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  pintarLateral(); pintarPanel();
   $('#hoy').textContent = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][d.getDay()] + ', ' + d.getDate() + ' de ' + MESL[d.getMonth()];
 }
 const vacio = (i, t, s) => `<div class="vacio">${ico(i)}<b>${t}</b>${s}</div>`;
 
-$('#inicio').addEventListener('click', e => { const b = e.target.closest('.ticket'); if (b) abrirFicha(b.dataset.id); });
+$('#inicio').addEventListener('click', e => { const b = e.target.closest('.ticket'); if (!b) return; if (MQ.matches) { panelId = b.dataset.id; if (panel) panel._t = -1; pintarPanel(); } else abrirFicha(b.dataset.id); });
+
+/* ---------- Escritorio (desde 1024 px) ---------- */
+const MQ = matchMedia('(min-width:1024px)');
+let panel = null, panelId = null;
+function pintarPanel() {
+  const bs = [...document.querySelectorAll('#inicio .ticket')];
+  if (!MQ.matches) { if (panel) { panel.remove(); panel = null; } bs.forEach(b => b.classList.remove('elegido')); return; }
+  const ids = bs.map(b => b.dataset.id);
+  if (!ids.includes(panelId)) panelId = ids[0] || null;
+  bs.forEach(b => b.classList.toggle('elegido', b.dataset.id === panelId));
+  const t = panelId && tickets.find(x => x.id === panelId && !x.borrado);
+  if (!t) { if (panel) { panel.remove(); panel = null; } return; }
+  if (panel && panel._id === panelId && panel._t === t.t) return;
+  abrirFicha(panelId, true);
+}
+function pintarLateral() {
+  const lat = $('#lateral'); if (!lat) return;
+  const prox = [];
+  vivos().forEach(t => { const e = estado(t); if (e.papelera) return;
+    if (e.devAbierta && t.devHasta) prox.push({ t, f: t.devHasta, q: 'Fin de devolución' });
+    if (e.garAbierta && t.garHasta && e.diasGar <= 90) prox.push({ t, f: t.garHasta, q: 'Fin de garantía' }); });
+  prox.sort((a, b) => a.f.localeCompare(b.f));
+  lat.innerHTML = `<label class="lat-subir" for="f-archivo">${ico('descargar')}<b>Suelta aquí fotos o PDF</b><small>o haz clic para elegirlos. También puedes pegar una imagen con Ctrl+V.</small></label>
+    <div class="lat-caja"><h2>Próximos vencimientos</h2>${prox.length ? prox.slice(0, 5).map(x => { const d = aFecha(x.f);
+      return `<button class="lat-v" data-id="${esc(x.t.id)}"><span class="d">${d.getDate()}<small>${MES[d.getMonth()]}</small></span><span class="t"><b>${esc(titulo(x.t))}</b><small>${x.q}</small></span></button>`; }).join('')
+      : '<p class="nota-form" style="margin:0">Nada vence en los próximos meses.</p>'}</div>`;
+}
+$('#lateral').addEventListener('click', e => { const b = e.target.closest('.lat-v'); if (!b) return; panelId = b.dataset.id; if (panel) panel._t = -1;
+  if (!document.querySelector(`#inicio .ticket[data-id="${CSS.escape(panelId)}"]`)) { filtro = 'todos'; texto = ''; $('#buscar').value = ''; document.querySelectorAll('#filtros button').forEach(x => { x.classList.toggle('on', x.dataset.f === 'todos'); x.setAttribute('aria-pressed', String(x.dataset.f === 'todos')); }); pintarInicio(); } else pintarPanel(); });
+MQ.addEventListener('change', () => pintarInicio());
+$('#b-nuevo-pc').addEventListener('click', () => nuevoTicket());
+// Arrastrar y soltar fotos o PDF en cualquier parte de la ventana
+const conArchivos = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+document.addEventListener('dragover', e => { if (!conArchivos(e)) return; e.preventDefault(); document.body.classList.add('soltando-archivo'); });
+document.addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('soltando-archivo'); });
+document.addEventListener('drop', e => {
+  if (!conArchivos(e)) return; e.preventDefault(); document.body.classList.remove('soltando-archivo');
+  const fs = [...e.dataTransfer.files].filter(f => esImagenOPdf(f.type));
+  if (!fs.length) return aviso('Solo se pueden añadir fotos o PDF');
+  const top = capas[capas.length - 1]; if (top && top._anadir) fs.forEach(top._anadir); else ticketCon(fs);
+});
+// ↑ ↓ cambian de ticket en el panel
+document.addEventListener('keydown', e => {
+  if (!MQ.matches || capas.length || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  const bs = [...document.querySelectorAll('#inicio .ticket')], i = bs.findIndex(b => b.dataset.id === panelId), sig = bs[Math.max(0, Math.min(bs.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+  if (sig) { e.preventDefault(); panelId = sig.dataset.id; pintarPanel(); sig.focus(); }
+});
 $('#filtros').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   filtro = b.dataset.f; document.querySelectorAll('#filtros button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); pintarInicio();
@@ -557,7 +643,8 @@ $('#buscar').addEventListener('input', e => { clearTimeout(buscaT); buscaT = set
 const capas = [];
 function fondoInerte() {
   const tapa = capas.length > 0;
-  ['header.cab', '#inicio', 'nav.barra'].forEach(s => { const el = $(s); if (el) el.inert = tapa; });
+  ['header.cab', '#inicio', 'nav.barra', '#lateral'].forEach(s => { const el = $(s); if (el) el.inert = tapa; });
+  if (panel) panel.inert = tapa;
   capas.forEach((c, i) => c.inert = i < capas.length - 1);
 }
 function abrirCapa(html, alCerrar) {
@@ -918,7 +1005,7 @@ function editar(id, archivos) {
       if (i >= 0) tickets[i] = t; else tickets.unshift(t);
       pendientes.add(t.id); guardarLocal(); pintarInicio(); programarSync();
       cerrarCapa();
-      if (viejo) { cerrarCapa(); setTimeout(() => abrirFicha(t.id), 40); }
+      if (viejo) { cerrarCapa(); if (MQ.matches) { panelId = t.id; if (panel) panel._t = -1; pintarPanel(); } else setTimeout(() => abrirFicha(t.id), 40); }
       aviso(viejo ? 'Cambios guardados' : 'Ticket guardado');
     }
   });
@@ -989,7 +1076,7 @@ function accionFotos(t, blobs, modo, cont) {
   else files.forEach(descargar);
 }
 
-function abrirFicha(id) {
+function abrirFicha(id, enPanel) {
   const t = tickets.find(x => x.id === id); if (!t || t.borrado) return;
   const e = estado(t), fotos = t.fotos || [], blobs = {};
   precargar(t, blobs);
@@ -1054,6 +1141,14 @@ function abrirFicha(id) {
       ${e.papelera ? `<button class="btn ancho" data-x="conservar">Conservar un año más</button>` : ''}
       ${t.texto ? `<details class="texto"><summary>Ver texto leído del ticket</summary><pre></pre></details>` : ''}
     </div>`);
+  if (enPanel) {
+    capas.splice(capas.indexOf(c), 1); c.classList.add('panel'); c.setAttribute('role', 'region'); c.removeAttribute('aria-modal');
+    if (!capas.length) document.body.style.overflow = '';
+    if (panel && panel !== c) panel.remove();
+    panel = c; c._id = id; c._t = t.t; fondoInerte();
+    if (c._vuelta && document.contains(c._vuelta)) c._vuelta.focus({ preventScroll: true });
+  }
+  const cerrarEsta = () => { if (c.classList.contains('panel')) { c.remove(); if (panel === c) panel = null; pintarPanel(); } else cerrarCapa(); };
   c.querySelector('.tn').textContent = titulo(t);
   if (sub) c.querySelector('.sub').textContent = sub;
   if (t.texto) c.querySelector('pre').textContent = t.texto;
@@ -1063,10 +1158,10 @@ function abrirFicha(id) {
     if (a === 'cerrar') cerrarCapa();
     else if (a === 'editar') editar(t.id, []);
     else if (a === 'fotos') fotos.length ? abrirFotos(t, blobs) : editar(t.id, []);
-    else if (a === 'borrar') { if (confirm('¿Borrar este ticket y sus fotos?')) { borrarTicket(t.id); cerrarCapa(); aviso('Ticket borrado'); } }
+    else if (a === 'borrar') { if (confirm('¿Borrar este ticket y sus fotos?')) { borrarTicket(t.id); cerrarEsta(); aviso('Ticket borrado'); } }
     else if (a === 'conservar') {
-      const real = tickets.find(x => x.id === t.id && !x.borrado); if (!real) { cerrarCapa(); return aviso('Este ticket ya no existe'); }
-      real.garHasta = sumarAnios(hoy(), 1); real.garOpc = 'otra'; real.t = Date.now(); pendientes.add(real.id); guardarLocal(); pintarInicio(); programarSync(); cerrarCapa(); aviso('Se conserva hasta ' + fCorta(real.garHasta));
+      const real = tickets.find(x => x.id === t.id && !x.borrado); if (!real) { cerrarEsta(); return aviso('Este ticket ya no existe'); }
+      real.garHasta = sumarAnios(hoy(), 1); real.garOpc = 'otra'; real.t = Date.now(); pendientes.add(real.id); guardarLocal(); pintarInicio(); programarSync(); if (!c.classList.contains('panel')) cerrarCapa(); aviso('Se conserva hasta ' + fCorta(real.garHasta));
     }
     else if (a === 'compartir') accionFotos(t, blobs, 'enviar');
     else if (a === 'guardar') accionFotos(t, blobs, 'guardar', x.closest('.acciones').parentNode);
