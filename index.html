@@ -6,8 +6,7 @@
 <meta name="description" content="Tickets y facturas con su foto, plazos de devolución y garantía. App personal.">
 <meta name="robots" content="noindex, nofollow">
 <title>Mis Tickets</title>
-<meta name="theme-color" content="#ECECE9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F3EEF1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mis Tickets">
@@ -15,9 +14,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-180.png">
 <link rel="icon" href="icono-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="fuentes/sora-600.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 :root{
   --bg:#ECECE9; --card:#FFFFFF; --ink:#1E1E1C; --txt:#1E1E1C; --sec:#5C5C57; --soft:#ECECE9; --soft2:#F4F4F1; --line:#E2E2DE; --track:#DEDEDA;
@@ -312,6 +309,89 @@ body.teclado{padding-bottom:24px}
   .lat-v .t b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lat-v .t small{font-size:12px}
 }
+
+/* ======================= v13 · ESTILO «AURORA · ALBA» (el mismo que Mis apps, Mi Día y Hábitos) =======================
+   Fondo claro con brumas lavanda, menta y melocotón; cristal blanco; todo en Sora con jerarquía por pesos;
+   acento melocotón mate. Siempre claro (sin modo oscuro), como el resto de apps. */
+@font-face{font-family:Sora;font-weight:400;font-display:swap;src:url(fuentes/sora-400.woff2) format('woff2')}
+@font-face{font-family:Sora;font-weight:500;font-display:swap;src:url(fuentes/sora-500.woff2) format('woff2')}
+@font-face{font-family:Sora;font-weight:600;font-display:swap;src:url(fuentes/sora-600.woff2) format('woff2')}
+@font-face{font-family:Sora;font-weight:700 800;font-display:swap;src:url(fuentes/sora-700.woff2) format('woff2')}
+:root,:root:root{
+  --bg:#F3EEF1; --card:rgba(255,255,255,.62); --ink:#2A2433; --txt:#2A2433; --sec:#857D92; --soft:rgba(42,36,51,.06); --soft2:rgba(255,255,255,.5);
+  --line:rgba(42,36,51,.09); --track:rgba(42,36,51,.08);
+  --inv:#2A2433; --inv-txt:#FBF7F9; --inv-sec:#B9B1C4; --inv-line:rgba(255,255,255,.14); --inv-2:rgba(255,255,255,.12);
+  --ok:#4FA88E; --warn:#D9A441; --err:#C0574A; --acento:#FFCBB3; --acento2:#FFBDA0;
+  --barra:rgba(255,255,255,.72); --sombra:0 10px 30px rgba(120,100,140,.12); --borde:1px solid rgba(255,255,255,.95);
+  --mono:Sora,system-ui,sans-serif;
+  --fondo-alba:radial-gradient(60% 40% at 8% 4%,rgba(190,172,255,.5),transparent 70%),radial-gradient(50% 35% at 96% 22%,rgba(160,226,205,.4),transparent 70%),radial-gradient(55% 40% at 70% 102%,rgba(255,186,164,.45),transparent 70%),#F3EEF1;
+  color-scheme:light;
+}
+html,body{font-family:Sora,system-ui,-apple-system,sans-serif;letter-spacing:-.01em}
+html{background:#F3EEF1}
+body{background:var(--fondo-alba);background-attachment:fixed}
+[style*="--mono"],.tarjeta-osc .fd b,#e-num,#e-ident,#e-barras,.carnet .lineas{font-variant-numeric:tabular-nums}
+/* cristal */
+.ticket,.billete,.bloque,.fila-fotos,.carnet,.buscar,.boton-icono,.lat-caja,.leido,.foto-grande,.btn:not(.pri),.ft:not(.add),.capa .top .acc.sec{border:var(--borde);box-shadow:0 8px 24px rgba(120,100,140,.08);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.btn.peligro{color:var(--err)}
+header.cab,.capa .top{background:rgba(243,238,241,.72);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.capa{background:var(--fondo-alba);background-attachment:fixed}
+.corte::before,.corte::after{display:none}
+header.cab{background:linear-gradient(180deg,rgba(243,238,241,.92) 0%,rgba(243,238,241,.8) 75%,rgba(243,238,241,0) 100%);-webkit-backdrop-filter:none;backdrop-filter:none}
+/* jerarquía */
+.cab h1{font-weight:600;letter-spacing:-.04em}
+.billete .tn,.carnet .nom{font-weight:600;letter-spacing:-.04em}
+.ticket .tienda{font-weight:600;letter-spacing:-.02em}
+.ticket .importe,.ruta .ext b,.lat-v .d{font-weight:600;letter-spacing:-.02em}
+.tarjeta-osc .total b{font-weight:600;letter-spacing:-.04em}
+.dato .v,.campo input{font-weight:600}
+h2.sec{font-weight:600}
+/* segmentados y menú */
+.filtros,.opciones{background:rgba(255,255,255,.5);border:var(--borde)}
+.filtros button.on,.opciones button.on{background:var(--acento);color:var(--ink)}
+nav.barra{border:var(--borde);box-shadow:var(--sombra)}
+nav.barra .tab.on{background:rgba(211,198,255,.55);color:var(--ink);margin:0 6px}
+/* acento melocotón en lo principal */
+.mas,.btn.pri,.capa .top .acc,.nuevo-pc{background:var(--acento)!important;color:var(--ink)!important}
+.mas{box-shadow:0 8px 20px rgba(255,160,130,.3)}
+.interruptor input:checked{background:var(--acento2)}
+.rueda{border-top-color:#9B87E8}
+.chip.alerta{background:var(--acento);color:var(--ink)}
+.chip.peligro{border-color:#C0705A;color:#C0705A}
+.aviso{background:var(--acento);color:var(--ink)}
+.ruta .linea i,.ruta .linea .p0{background:#9B87E8}.ruta .linea .p1{border-color:#9B87E8}
+.ruta.alerta .queda{background:var(--acento);color:var(--ink)}
+/* lo que era negro pasa a degradado pastel */
+.tarjeta-osc{background:linear-gradient(150deg,#D3C6FF 0%,#C7DDF3 50%,#B5E9D8 100%);color:var(--ink);border:var(--borde)}
+.tarjeta-osc .total span,.tarjeta-osc .fd span{color:#5E566E}
+.tarjeta-osc .filas,.tarjeta-osc .fd{border-color:rgba(42,36,51,.12)}
+.tarjeta-osc .codigo{background:rgba(255,255,255,.85)}
+.enlace-osc{color:var(--ink)}
+.ticket.oscuro{background:linear-gradient(140deg,rgba(255,214,196,.95),rgba(255,203,179,.85));color:var(--ink)}
+.ticket.oscuro .concepto,.ticket.oscuro .fecha{color:#7A6060}
+.ticket.oscuro .corte{border-color:rgba(42,36,51,.14)}
+.ticket.oscuro .chip{background:rgba(255,255,255,.6);color:var(--ink)}
+.ticket.oscuro .chip.alerta{background:var(--ink);color:#fff}
+.elegir label{border:var(--borde);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.elegir label:first-child{background:linear-gradient(150deg,#D3C6FF,#B5E9D8);color:var(--ink)}
+.elegir label:first-child small{color:#5E566E}
+.carnet .icono-c{background:linear-gradient(135deg,#D3C6FF,#B5E9D8);color:var(--ink)}
+.carnet .sello.vivo{border-color:var(--ok);color:#2F7A63}
+.toast{background:var(--ink);color:#fff}
+.ft.add{border-color:rgba(42,36,51,.22)}
+.fotos.peque .ft.sel{outline-color:#9B87E8}
+:focus-visible{outline-color:#9B87E8}
+@media (min-width:1024px){
+  .ticket:hover{box-shadow:0 0 0 2px rgba(255,255,255,.95),0 12px 30px rgba(120,100,140,.14)}
+  .ticket.elegido{box-shadow:0 0 0 2px var(--acento2),0 12px 30px rgba(120,100,140,.14)}
+  .capa.panel{background:rgba(255,255,255,.45);border:var(--borde);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:0 20px 50px rgba(120,100,140,.12)}
+  .capa.panel .top{background:rgba(255,255,255,.55)}
+  .lat-subir{border-color:rgba(42,36,51,.18);background:rgba(255,255,255,.35)}
+  .lat-subir:hover{border-color:var(--acento2)}
+  .lat-caja{border:var(--borde)}
+  .lat-v .d{background:linear-gradient(135deg,#D3C6FF,#B5E9D8)}
+  body.soltando-archivo::after{border-color:#9B87E8}
+}
 </style>
 </head>
 <body>
@@ -372,7 +452,7 @@ body.teclado{padding-bottom:24px}
 <script src="extras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v12';
+const VERSION = 'v13';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

@@ -77,8 +77,9 @@ def manual(pg, producto, tienda, fecha, dev=None, gar=None, imp=False):
     pg.click('.capa:last-child .top [data-x=guardar]'); pg.wait_for_timeout(300); return pista, hd
 
 def ticket(id, **k):
-    t = dict(id=id, t=1, creado=1, tienda='Decathlon', concepto='Zapatillas', fecha='2026-10-20', total=20, devOpc=30, garOpc=0,
-             devHasta='2026-11-19', garHasta=None, fotos=[]); t.update(k); return t
+    import datetime as _d; hoy = _d.date.today()   # fechas relativas a hoy: con fechas fijas los tickets caducaban y la prueba fallaba
+    t = dict(id=id, t=1, creado=1, tienda='Decathlon', concepto='Zapatillas', fecha=str(hoy - _d.timedelta(days=5)), total=20, devOpc=30, garOpc=0,
+             devHasta=str(hoy + _d.timedelta(days=25)), garHasta=None, fotos=[]); t.update(k); return t
 
 imagenes()
 with sync_playwright() as p:
@@ -183,8 +184,8 @@ with sync_playwright() as p:
     c = b.new_context(); pg = c.new_page(); pg.goto(H + 'manifest.json')
     pg.evaluate("caches.open('otra-app-v1').then(x=>x.put('/otra/',new Response('ok')))"); pg.goto(H); pg.wait_for_timeout(2500)
     ok('otra-app-v1' in pg.evaluate('caches.keys()'), 'no borra la caché de otras apps del mismo dominio', pg.evaluate('caches.keys()')); c.close()
-    T = ticket('p1', fecha='2026-09-20', devHasta='2026-10-20'); srv['tickets'] = {'p1': dict(T, s=1)}
-    ctx, pg = nuevo(b, 'conservar', [T]); pg.click('#filtros [data-f=papelera]'); pg.click('.ticket'); pg.wait_for_timeout(300)
+    import datetime as _d; _h = _d.date.today(); T = ticket('p1', fecha=str(_h - _d.timedelta(days=40)), devHasta=str(_h - _d.timedelta(days=10)))  # vencido hace 10 días: en la papelera; srv['tickets'] = {'p1': dict(T, s=1)}
+    ctx, pg = nuevo(b, 'conservar', [T]); pg.click('#filtros [data-f=papelera]'); pg.click('.ticket[data-id=p1]'); pg.wait_for_timeout(300)
     pg.evaluate("localStorage.removeItem('mt-desde')"); pg.evaluate('sincronizar()'); pg.wait_for_timeout(800)
     pg.click('[data-x=conservar]'); pg.wait_for_timeout(2500)
     ok(srv['tickets']['p1'].get('garHasta'), '«Conservar un año más» se guarda aunque haya sincronizado', srv['tickets']['p1'].get('garHasta')); ctx.close()
