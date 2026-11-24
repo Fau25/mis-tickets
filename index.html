@@ -392,6 +392,15 @@ nav.barra .tab.on{background:rgba(211,198,255,.55);color:var(--ink);margin:0 6px
   .lat-v .d{background:linear-gradient(135deg,#D3C6FF,#B5E9D8)}
   body.soltando-archivo::after{border-color:#9B87E8}
 }
+/* Menú común de Mis apps: esta app tiene una sola sección, así que abajo solo queda el «+» (Ajustes ya está arriba a la derecha) */
+nav.barra{left:auto;right:20px;width:auto;height:auto;max-width:none;margin:0;padding:0;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+nav.barra .in{display:block;height:auto}
+nav.barra .tab{display:none}
+nav.barra .mas{width:56px;height:56px;border-radius:50%;background:#FFCBB3;color:#2A2433;border:0;display:grid;place-items:center;box-shadow:0 10px 30px rgba(255,160,122,.3);margin:0}
+nav.barra .mas svg{width:24px;height:24px}
+button.punto::after{inset:-18px}
+.cab h1{font-weight:600}
+body{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
 </style>
 </head>
 <body>
@@ -452,7 +461,7 @@ nav.barra .tab.on{background:rgba(211,198,255,.55);color:var(--ink);margin:0 6px
 <script src="extras.js"></script>
 <script>
 'use strict';
-const VERSION = 'v13';
+const VERSION = 'v14';
 const $ = s => document.querySelector(s);
 const ico = (n, c = '') => `<svg class="i ${c}"><use href="#i-${n}"/></svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

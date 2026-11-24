@@ -147,7 +147,7 @@ with sync_playwright() as p:
     ok(dl.value.suggested_filename.startswith('Resguardo'), 'resguardo en imagen')
     A.click('[data-x=reclamar]'); A.fill('#r-problema', 'No carga.'); A.click('#r-tipo [data-v=gar]')
     ok('No carga.' in A.input_value('#r-texto') and 'garantía' in A.input_value('#r-texto'), 'texto de reclamación')
-    A.evaluate('while(capas.length) cerrarCapa()'); A.click('#t-ajustes'); A.click('[data-x=gmail]'); A.wait_for_timeout(3500)
+    A.evaluate('while(capas.length) cerrarCapa()'); A.click('#b-ajustes-cab'); A.click('[data-x=gmail]'); A.wait_for_timeout(3500)
     g = A.evaluate("JSON.stringify(tickets.filter(t=>t.id==='gm1').map(t=>[titulo(t),t.total,t.num,t.devHasta,!!t.analizar]))")
     ok(g == json.dumps([['Ratón Logitech MX Master 3S', 89.99, 'FS 2026/123456', '2026-11-26', False]], separators=(',', ':'), ensure_ascii=False), 'factura de Gmail completada', g)
     A.click('[data-x=copia]'); A.wait_for_timeout(3000)
